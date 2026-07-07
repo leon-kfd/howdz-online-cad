@@ -87,4 +87,20 @@
   - After move executes, base point resets to allow repeated moves without re-activating tool
   - Move tool snapshots selected entities at activation time (same as CopyTool) to avoid issues with selection changing during operation
   - `M` shortcut conflicts with nothing currently; if menu system added later, may need to disable shortcuts when menu is active
+
+---
+
+## 2026-07-07 - US-008
+- Implemented FilletTool for filleting two line segments with a configurable radius
+- Files changed: `src/core/tools/FilletTool.ts` (new), `src/core/CAD.ts`, `src/core/tools/index.ts`, `src/index.ts`, `demo/index.html`, `tasks/prd.json`
+- FilletTool: click two lines to fillet with current radius; FILLET/F command to activate, FILLET R <n> to set radius (default 10)
+- Geometry: computes line-line intersection, angle bisector, tangent points (distance = R/tan(θ/2)), fillet arc center (distance = R/sin(θ/2) along bisector)
+- Line trimming: replaces the endpoint closer to intersection with the tangent point (supports both trim and extend)
+- Arc direction: uses cross product of vectors from center to tangent points to determine counterclockwise sweep
+- **Learnings for future iterations:**
+  - `computeLineLineFillet` is exported as a standalone utility — reusable for chamfer (US-009) geometry
+  - Line-arc and arc-arc fillet cases are noted as future extensions in the code (more complex tangent circle geometry)
+  - Fillet tool resets after each pair of clicks (same multi-operation pattern as CopyTool)
+  - `F` keyboard shortcut for fillet doesn't conflict with existing shortcuts
+  - Toolbar button already had placeholder SVG in demo — just needed an `id` and click handler
 ---
