@@ -11,6 +11,7 @@ import { ArcTool } from './tools/ArcTool';
 import { CopyTool } from './tools/CopyTool';
 import { MoveTool } from './tools/MoveTool';
 import { FilletTool } from './tools/FilletTool';
+import { ChamferTool } from './tools/ChamferTool';
 import { LineEntity, CircleEntity, ArcEntity } from './Entity';
 
 /**
@@ -176,6 +177,12 @@ export class HowdzCAD {
     });
     this.toolManager.register(filletTool);
 
+    // 注册倒角工具
+    const chamferTool = new ChamferTool(this.entityManager, (entity) => {
+      this.entityManager.add(entity);
+    });
+    this.toolManager.register(chamferTool);
+
     // 默认激活选择工具
     this.toolManager.setActiveTool('select');
 
@@ -339,6 +346,25 @@ export class HowdzCAD {
         }
         // 切换到倒圆角工具
         this.toolManager.setActiveTool('fillet');
+        return true;
+      }
+      case 'CHAMFER':
+      case 'CHA': {
+        const result = ChamferTool.parseCommandLine(args);
+        if (result) {
+          const chamferTool = this.toolManager.getTool('chamfer') as ChamferTool;
+          if (chamferTool) {
+            if (result.dist !== undefined) {
+              chamferTool.setDistance(result.dist);
+            } else {
+              if (result.dist1 !== undefined) chamferTool.setDistance1(result.dist1);
+              if (result.dist2 !== undefined) chamferTool.setDistance2(result.dist2);
+            }
+          }
+          return true;
+        }
+        // 切换到倒角工具
+        this.toolManager.setActiveTool('chamfer');
         return true;
       }
       default:

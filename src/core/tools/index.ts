@@ -12,3 +12,5 @@ export type { CopyEntityCreatedCallback } from './CopyTool';
 export { MoveTool } from './MoveTool';
 export { FilletTool } from './FilletTool';
 export { computeLineLineFillet } from './FilletTool';
+export { ChamferTool } from './ChamferTool';
+export { computeLineLineChamfer } from './ChamferTool';
