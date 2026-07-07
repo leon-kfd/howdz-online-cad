@@ -24,4 +24,20 @@
 - **Learnings for future iterations:**
   - `drawOverlay` viewport param is `{ worldToScreen }` only — use `Math.hypot` on screen coords for radius display, not `viewport.scale`
   - Arc entity (US-004) will follow same pattern as CircleEntity but with start/end angles
+  - ArcTool `drawOverlay` viewport param has no `scale` — compute screen radius via `Math.hypot` on screen coords instead
+  - `computeArcFromThreePoints` uses circumcenter algorithm (perpendicular bisector intersection); handles collinear points by returning null
+  - Arc angles use math convention (CCW positive); Canvas draws correctly with `counterclockwise: true` since Y-flip preserves visual CCW direction
+
+---
+
+## 2026-07-07 - US-004
+- Implemented ArcEntity and ArcTool
+- Files changed: `src/core/Entity.ts`, `src/core/tools/ArcTool.ts` (new), `src/core/CAD.ts`, `src/core/tools/index.ts`, `src/index.ts`, `demo/index.html`
+- ArcEntity: center+radius+startAngle+endAngle model, 4 grip points (start, end, midpoint, center), hitTest on arc circumference with angle-in-arc check
+- ArcTool: threePoint mode (click start, pass-through, end) and centerStart mode (click center, start, end); supports preview of partial arc during drawing
+- Command: ARC x1,y1 x2,y2 x3,y3 (three-point) or ARC cx,cy sx,sy angle (center+start+sweep)
+- **Learnings for future iterations:**
+  - drawOverlay viewport only has worldToScreen — compute screen radius via `Math.hypot` on screen-space points, not `viewport.scale`
+  - Arc hitTest needs both circle-distance check AND angle-in-range check; normalize angles to [0, 2π) for reliable range testing
+  - computeArcFromThreePoints returns null for collinear points (degenerate case)
 ---

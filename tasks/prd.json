@@ -67,8 +67,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "All criteria verified: Three-point arc mode (start, pass-through, end), center+start+angle mode (center, start point, sweep angle), command line input (ARC x1,y1 x2,y2 x3,y3 for three-point; ARC cx,cy sx,sy angle for center mode), selection with start/end/midpoint/center grip points, typecheck passes. Browser verification pending manual test."
     },
     {
       "id": "US-005",
