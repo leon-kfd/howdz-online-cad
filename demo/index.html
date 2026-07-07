@@ -80,6 +80,14 @@
       background: #0078d4;
       color: #fff;
     }
+    .tool-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .tool-btn:disabled:hover {
+      background: transparent;
+      color: #aaa;
+    }
     .tool-btn svg {
       width: 20px;
       height: 20px;
@@ -283,6 +291,13 @@
         </button>
         <button class="tool-btn" id="tool-extend" title="延伸 (EX)">
           <svg viewBox="0 0 24 24"><path d="M4 20h16M8 4v12" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 12l4-4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        </button>
+        <div class="tool-divider"></div>
+        <button class="tool-btn" id="tool-undo" title="撤销 (Ctrl+Z)" disabled>
+          <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z" fill="currentColor"/></svg>
+        </button>
+        <button class="tool-btn" id="tool-redo" title="重做 (Ctrl+Y)" disabled>
+          <svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z" fill="currentColor"/></svg>
         </button>
       </div>
 
@@ -534,6 +549,39 @@
       }
     });
 
+    // 撤销/重做按钮
+    const undoBtn = document.getElementById('tool-undo');
+    const redoBtn = document.getElementById('tool-redo');
+
+    function updateUndoRedoButtons() {
+      if (undoBtn) {
+        undoBtn.disabled = !cad.canUndo();
+        undoBtn.title = cad.canUndo() ? `撤销 (Ctrl+Z) - ${cad.getUndoCount()} 步` : '无可撤销操作';
+      }
+      if (redoBtn) {
+        redoBtn.disabled = !cad.canRedo();
+        redoBtn.title = cad.canRedo() ? `重做 (Ctrl+Y) - ${cad.getRedoCount()} 步` : '无可重做操作';
+      }
+    }
+
+    undoBtn?.addEventListener('click', () => {
+      if (cad.undo()) {
+        updatePropertyPanel();
+        addHistory('已撤销', 'success');
+      }
+    });
+
+    redoBtn?.addEventListener('click', () => {
+      if (cad.redo()) {
+        updatePropertyPanel();
+        addHistory('已重做', 'success');
+      }
+    });
+
+    // 定期更新撤销/重做按钮状态
+    setInterval(updateUndoRedoButtons, 500);
+    updateUndoRedoButtons();
+
     // ========== 多键快捷键缓冲 ==========
     let keyBuffer = '';
     let keyBufferTimer = null;
@@ -609,10 +657,9 @@
         if (key === 'z') {
           e.preventDefault();
           clearKeyBuffer();
-          const count = cad.undo();
-          if (count > 0) {
+          if (cad.undo()) {
             updatePropertyPanel();
-            addHistory(`已撤销，恢复 ${count} 个图元`, 'success');
+            addHistory('已撤销', 'success');
           }
           return;
         }
@@ -621,10 +668,9 @@
         if (key === 'y') {
           e.preventDefault();
           clearKeyBuffer();
-          const count = cad.redo();
-          if (count > 0) {
+          if (cad.redo()) {
             updatePropertyPanel();
-            addHistory(`已重做，删除 ${count} 个图元`, 'success');
+            addHistory('已重做', 'success');
           }
           return;
         }

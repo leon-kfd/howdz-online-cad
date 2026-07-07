@@ -55,3 +55,15 @@
 - DXF ARC angles are in degrees; convert to radians for ArcEntity (which uses radians internally)
 - `loadDXF` currently replaces all entities; US-015 (export) will add the reverse: entities → DXF text
 - File picker integration lives in demo layer (not core) since core has no DOM file API access
+
+## Undo/Redo System (Command Pattern)
+- `HistoryManager` manages undo/redo stacks — use `execute(command)` to run and record, `record(command)` to only record
+- Command interface: `execute()`, `undo()`, `description` — all operations should be encapsulated as commands
+- Available commands in `src/core/commands/Command.ts`:
+  - `AddEntityCommand` — for entity creation
+  - `RemoveEntityCommand` — for entity deletion
+  - `MoveEntityCommand` — for entity movement (stores dx, dy)
+  - `ModifyEntityCommand` — for grip editing/extend (stores before/after state snapshots)
+  - `CompoundCommand` — groups multiple commands as one operation (for fillet/chamfer)
+- Tools should call `entityManager.getHistoryManager().execute(command)` to make operations undoable
+- `EntityManager.undo()`/`redo()` return boolean; `getUndoCount()`/`getRedoCount()` for UI display

@@ -210,3 +210,21 @@
   - File download uses `Blob` + `URL.createObjectURL` + hidden `<a>` click pattern (same as file I/O in demo layer)
   - SAVE command is intercepted in demo layer (before `executeCommand`) to trigger download, since core library has no DOM file API
 ---
+
+## 2026-07-07 - US-016
+- Implemented general undo/redo system with Command pattern
+- Files changed: `src/core/commands/Command.ts` (new), `src/core/commands/HistoryManager.ts` (new), `src/core/commands/index.ts` (new), `src/core/EntityManager.ts`, `src/core/CAD.ts`, `src/index.ts`, `demo/index.html`, `tasks/prd.json`
+- Command pattern: Command interface with execute()/undo() methods
+- Concrete commands: AddEntityCommand, RemoveEntityCommand, MoveEntityCommand, ModifyEntityCommand, CompoundCommand
+- HistoryManager: manages undo/redo stacks with maxHistory limit support
+- EntityManager: exposes getHistoryManager() for tools to record commands
+- CAD.ts: undo()/redo() return boolean, added getUndoCount()/getRedoCount()
+- Demo: toolbar undo/redo buttons with disabled state, show operation count in tooltip
+- **Learnings for future iterations:**
+  - Command pattern enables undo/redo for any operation type — tools should create commands and execute via HistoryManager
+  - CompoundCommand groups multiple commands as one operation (for fillet/chamfer which modify multiple entities)
+  - ModifyEntityCommand uses state snapshots for grip editing and extend operations
+  - Tools should call `entityManager.getHistoryManager().execute(command)` instead of direct entity modification
+  - Undo/redo buttons use setInterval(500ms) to poll state — could be optimized with onChange callback
+  - Old eraseSelected undo stack kept for backward compatibility; new code should use Command pattern
+---

@@ -397,8 +397,7 @@ export class HowdzCAD {
         }
         if (upperArgs === 'U' || upperArgs === 'UNDO') {
           // 撤销上一次删除
-          const count = this.entityManager.undo();
-          return count > 0;
+          return this.entityManager.undo();
         }
         // 删除选中实体
         this.entityManager.eraseSelected();
@@ -523,10 +522,10 @@ export class HowdzCAD {
   }
 
   /**
-   * 撤销上一次删除操作
-   * @returns 恢复的实体数量
+   * 撤销上一步操作
+   * @returns 是否成功撤销
    */
-  public undo(): number {
+  public undo(): boolean {
     return this.entityManager.undo();
   }
 
@@ -538,10 +537,10 @@ export class HowdzCAD {
   }
 
   /**
-   * 重做上一次撤销的操作
-   * @returns 被重新删除的实体数量
+   * 重做上一步操作
+   * @returns 是否成功重做
    */
-  public redo(): number {
+  public redo(): boolean {
     return this.entityManager.redo();
   }
 
@@ -550,6 +549,20 @@ export class HowdzCAD {
    */
   public canRedo(): boolean {
     return this.entityManager.canRedo();
+  }
+
+  /**
+   * 获取撤销操作次数
+   */
+  public getUndoCount(): number {
+    return this.entityManager.getUndoCount();
+  }
+
+  /**
+   * 获取重做操作次数
+   */
+  public getRedoCount(): number {
+    return this.entityManager.getRedoCount();
   }
 
   /**

@@ -1,21 +1,12 @@
 import { Entity } from './Entity';
 import { BoundingBox, Point } from './types';
+import { HistoryManager } from './commands/HistoryManager';
 
 /** 夹点命中结果 */
 export interface GripHitResult {
   entity: Entity;
   gripIndex: number;
   point: Point;
-}
-
-/**
- * 撤销条目
- */
-interface UndoEntry {
-  /** 被删除的实体（按顺序） */
-  entities: Entity[];
-  /** 在原数组中的插入位置 */
-  index: number;
 }
 
 /**
@@ -27,13 +18,19 @@ export class EntityManager {
   private entities: Entity[] = [];
   /** 选中的实体集合 */
   private selectedSet: Set<string> = new Set();
-  /** 撤销栈（仅用于删除操作） */
-  private undoStack: UndoEntry[] = [];
-  /** 重做栈 */
-  private redoStack: UndoEntry[] = [];
+  /** 历史管理器 */
+  private historyManager: HistoryManager;
+  /** 旧版撤销栈（仅用于eraseSelected兼容） */
+  private undoStack: Array<{ entities: Entity[]; index: number }> = [];
+  /** 旧版重做栈 */
+  private redoStack: Array<{ entities: Entity[]; index: number }> = [];
 
   /** 实体变更回调 */
   public onChange: (() => void) | null = null;
+
+  constructor() {
+    this.historyManager = new HistoryManager();
+  }
 
   /**
    * 添加实体
@@ -252,7 +249,58 @@ export class EntityManager {
     return this.selectedSet.size;
   }
 
-  // ========== 删除与撤销 ==========
+  // ========== 历史管理 ==========
+
+  /**
+   * 获取历史管理器
+   */
+  public getHistoryManager(): HistoryManager {
+    return this.historyManager;
+  }
+
+  /**
+   * 撤销上一步操作
+   * @returns 是否成功撤销
+   */
+  public undo(): boolean {
+    return this.historyManager.undo();
+  }
+
+  /**
+   * 重做上一步操作
+   * @returns 是否成功重做
+   */
+  public redo(): boolean {
+    return this.historyManager.redo();
+  }
+
+  /**
+   * 是否有可撤销的操作
+   */
+  public canUndo(): boolean {
+    return this.historyManager.canUndo();
+  }
+
+  /**
+   * 是否有可重做的操作
+   */
+  public canRedo(): boolean {
+    return this.historyManager.canRedo();
+  }
+
+  /**
+   * 获取撤销操作次数
+   */
+  public getUndoCount(): number {
+    return this.historyManager.getUndoCount();
+  }
+
+  /**
+   * 获取重做操作次数
+   */
+  public getRedoCount(): number {
+    return this.historyManager.getRedoCount();
+  }
 
   /**
    * 删除选中的实体（支持撤销）
@@ -274,7 +322,7 @@ export class EntityManager {
     }
     this.selectedSet.clear();
 
-    // 压入撤销栈，清空重做栈（新操作使重做历史失效）
+    // 记录到历史（使用旧的撤销栈保持兼容性）
     this.undoStack.push({ entities: selected, index: firstIndex });
     this.redoStack = [];
     this.onChange?.();
@@ -282,41 +330,26 @@ export class EntityManager {
   }
 
   /**
-   * 撤销上一次删除操作
-   * @returns 恢复的实体数量，如果没有可撤销的操作返回 0
+   * @deprecated 使用 undo() 替代
    */
-  public undo(): number {
+  public legacyUndo(): number {
     const entry = this.undoStack.pop();
     if (!entry) return 0;
 
-    // 记录恢复实体的当前位置（用于重做时精确移除）
     const insertAt = Math.min(entry.index, this.entities.length);
-
-    // 在原位置插入恢复的实体
     this.entities.splice(insertAt, 0, ...entry.entities);
-
-    // 压入重做栈
     this.redoStack.push({ entities: entry.entities, index: insertAt });
     this.onChange?.();
     return entry.entities.length;
   }
 
   /**
-   * 是否有可撤销的操作
+   * @deprecated 使用 redo() 替代
    */
-  public canUndo(): boolean {
-    return this.undoStack.length > 0;
-  }
-
-  /**
-   * 重做上一次撤销的操作（重新删除已恢复的实体）
-   * @returns 被重新删除的实体数量
-   */
-  public redo(): number {
+  public legacyRedo(): number {
     const entry = this.redoStack.pop();
     if (!entry) return 0;
 
-    // 重新删除这些实体
     for (const entity of entry.entities) {
       const idx = this.entities.indexOf(entity);
       if (idx !== -1) {
@@ -324,16 +357,8 @@ export class EntityManager {
       }
     }
 
-    // 压回撤销栈
     this.undoStack.push(entry);
     this.onChange?.();
     return entry.entities.length;
-  }
-
-  /**
-   * 是否有可重做的操作
-   */
-  public canRedo(): boolean {
-    return this.redoStack.length > 0;
   }
 }

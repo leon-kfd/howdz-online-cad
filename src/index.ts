@@ -20,3 +20,6 @@ export { DXFWriter } from './core/DXFWriter';
 export type { DXFLayer, DXFParseResult } from './core/DXFParser';
 export type { Tool, ToolContext } from './core/tools/Tool';
 export type { CADOptions, Point, BoundingBox, ViewportState } from './core/types';
+export { HistoryManager } from './core/commands/HistoryManager';
+export type { Command } from './core/commands/Command';
+export { AddEntityCommand, RemoveEntityCommand, MoveEntityCommand, ModifyEntityCommand, CompoundCommand } from './core/commands/Command';
