@@ -104,3 +104,19 @@
   - `F` keyboard shortcut for fillet doesn't conflict with existing shortcuts
   - Toolbar button already had placeholder SVG in demo — just needed an `id` and click handler
 ---
+
+## 2026-07-07 - US-009
+- Implemented ChamferTool for chamfering two line segments with configurable distances
+- Files changed: `src/core/tools/ChamferTool.ts` (new), `src/core/CAD.ts`, `src/core/tools/index.ts`, `src/index.ts`, `demo/index.html`, `tasks/prd.json`
+- ChamferTool: click two lines to chamfer; CHAMFER/CHA command to activate; supports equal-distance (D <n>) and unequal-distance (D1 <n> D2 <m>) chamfer
+- Geometry: computes line-line intersection, chamfer points at specified distances along each line from intersection, line trimming to chamfer points
+- New line entity created connecting the two chamfer points
+- **Learnings for future iterations:**
+  - ChamferTool follows same pattern as FilletTool — both compute intersection, trim lines, and create connecting entity
+  - `lineLineIntersection` helper is duplicated from FilletTool.ts (both are local functions); could be extracted to a shared geometry utility if more tools need it
+  - `trimLineToChamfer` is analogous to `trimLineToTangent` in FilletTool — same logic of replacing the closer-to-intersection endpoint
+  - `computeLineLineChamfer` is exported as a standalone utility, similar to `computeLineLineFillet`
+  - Chamfer determines trim direction by comparing which endpoint of each line is closer to the intersection point
+  - `H` keyboard shortcut used for chamfer since `CHA` would require multi-key buffering (too invasive for demo)
+  - Chamfer button in toolbar already had placeholder SVG — just needed `id` and click handler (same as fillet)
+---
