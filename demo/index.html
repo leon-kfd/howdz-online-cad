@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Howdz CAD - 演示</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Microsoft YaHei', sans-serif;
+      background: #1a1a1a;
+    }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* 顶部菜单栏 */
+    .menu-bar {
+      height: 32px;
+      background: #2d2d2d;
+      border-bottom: 1px solid #3a3a3a;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      gap: 4px;
+    }
+    .menu-item {
+      color: #ccc;
+      font-size: 13px;
+      padding: 4px 12px;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    .menu-item:hover {
+      background: #3a3a3a;
+    }
+
+    /* 主体区域 */
+    .main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* 左侧工具栏 */
+    .toolbar {
+      width: 48px;
+      background: #252525;
+      border-right: 1px solid #3a3a3a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 0;
+      gap: 4px;
+    }
+    .tool-btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #aaa;
+      font-size: 11px;
+      border: none;
+      background: transparent;
+    }
+    .tool-btn:hover {
+      background: #3a3a3a;
+      color: #fff;
+    }
+    .tool-btn.active {
+      background: #0078d4;
+      color: #fff;
+    }
+    .tool-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+    .tool-divider {
+      width: 28px;
+      height: 1px;
+      background: #3a3a3a;
+      margin: 4px 0;
+    }
+
+    /* 绘图区域 */
+    .canvas-area {
+      flex: 1;
+      position: relative;
+    }
+    #cad-container {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* 底部命令行 */
+    .command-line {
+      height: 28px;
+      background: #252525;
+      border-top: 1px solid #3a3a3a;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+    }
+    .command-prompt {
+      color: #999;
+      font-size: 12px;
+      font-family: 'Consolas', monospace;
+      margin-right: 8px;
+    }
+    .command-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #ddd;
+      font-size: 12px;
+      font-family: 'Consolas', monospace;
+      outline: none;
+    }
+
+    /* 提示浮层 */
+    .hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #555;
+      font-size: 14px;
+      pointer-events: none;
+      text-align: center;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- 顶部菜单栏 -->
+    <div class="menu-bar">
+      <div class="menu-item">文件</div>
+      <div class="menu-item">编辑</div>
+      <div class="menu-item">视图</div>
+      <div class="menu-item">绘图</div>
+      <div class="menu-item">修改</div>
+      <div class="menu-item">帮助</div>
+    </div>
+
+    <!-- 主体区域 -->
+    <div class="main">
+      <!-- 左侧工具栏 -->
+      <div class="toolbar">
+        <button class="tool-btn active" title="选择 (Esc)">
+          <svg viewBox="0 0 24 24"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+        </button>
+        <div class="tool-divider"></div>
+        <button class="tool-btn" title="直线 (L)">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="19" x2="19" y2="5" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        </button>
+        <button class="tool-btn" title="圆形 (C)">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        </button>
+        <button class="tool-btn" title="圆弧 (A)">
+          <svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 0 1 0 16" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        </button>
+        <div class="tool-divider"></div>
+        <button class="tool-btn" title="移动 (M)">
+          <svg viewBox="0 0 24 24"><path d="M12 2l4 4h-3v4h4V7l4 4-4 4v-3h-4v4h3l-4 4-4-4h3v-4H7v3l-4-4 4-4v3h4V6H8l4-4z" fill="currentColor"/></svg>
+        </button>
+        <button class="tool-btn" title="复制 (CO)">
+          <svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="1" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 16V5a1 1 0 0 1 1-1h11" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        </button>
+        <button class="tool-btn" title="删除 (E)">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        </button>
+        <div class="tool-divider"></div>
+        <button class="tool-btn" title="倒圆角 (F)">
+          <svg viewBox="0 0 24 24"><path d="M4 20V10a6 6 0 0 1 6-6h4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        </button>
+        <button class="tool-btn" title="倒角 (CHA)">
+          <svg viewBox="0 0 24 24"><path d="M4 20L10 14h4l6-6" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        </button>
+        <button class="tool-btn" title="延伸 (EX)">
+          <svg viewBox="0 0 24 24"><path d="M4 20h16M8 4v12" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 12l4-4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        </button>
+      </div>
+
+      <!-- 绘图区域 -->
+      <div class="canvas-area">
+        <div id="cad-container"></div>
+      </div>
+    </div>
+
+    <!-- 底部命令行 -->
+    <div class="command-line">
+      <span class="command-prompt">命令:</span>
+      <input class="command-input" type="text" placeholder="输入命令..." />
+    </div>
+  </div>
+
+  <script type="module">
+    import { HowdzCAD } from '../src/index.ts';
+
+    const cad = new HowdzCAD({
+      container: '#cad-container',
+      showGrid: true,
+      showAxes: true,
+    });
+
+    // 暴露到全局供调试
+    window.cad = cad;
+
+    console.log('HowdzCAD 初始化完成');
+    console.log('操作说明:');
+    console.log('  - 鼠标滚轮: 缩放');
+    console.log('  - 鼠标中键拖拽: 平移');
+    console.log('  - 状态栏显示实时坐标和缩放比例');
+  </script>
+</body>
+</html>

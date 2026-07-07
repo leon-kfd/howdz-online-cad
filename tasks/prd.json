@@ -1,0 +1,317 @@
+{
+  "project": "howdz-online-cad",
+  "branchName": "ralph/online-cad-plugin",
+  "description": "纯前端在线CAD插件 - 基于Canvas 2D的可嵌入组件库，支持直线/圆形/圆弧绘制、编辑操作、CAD命令行交互和DXF文件导入导出",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "CAD画布基础渲染",
+      "description": "作为用户，我需要一个可渲染二维图形的画布区域，以便进行绘图操作。",
+      "acceptanceCriteria": [
+        "实现Canvas 2D渲染画布，支持鼠标中键拖拽平移",
+        "支持鼠标滚轮缩放，范围0.01x到100x，以鼠标位置为中心",
+        "显示网格背景（可开关），网格随缩放自适应密度（1-2-5序列）",
+        "显示坐标原点标记（红色X轴、绿色Y轴）和十字光标",
+        "底部状态栏显示实时鼠标坐标、缩放比例、FPS",
+        "渲染帧率>=30fps（1000个图元场景下）",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "直线绘制",
+      "description": "作为用户，我想要绘制直线段，以便构建基础图形。",
+      "acceptanceCriteria": [
+        "支持鼠标点击两点绘制直线",
+        "支持命令行输入坐标绘制：LINE 0,0 100,100",
+        "支持连续绘制模式（自动以前一个终点为起点）",
+        "支持正交模式（按F8切换），限制为水平/垂直方向",
+        "直线可被选中，选中时显示夹点（端点和中点）",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "圆形绘制",
+      "description": "作为用户，我想要绘制圆形，以便添加圆形元素。",
+      "acceptanceCriteria": [
+        "支持圆心+半径模式：点击圆心，拖拽确定半径",
+        "支持两点定圆：点击直径两端点",
+        "支持命令行输入：CIRCLE 50,50 25（圆心x,y 半径）",
+        "圆形可被选中，选中时显示圆心和四个象限夹点",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "圆弧绘制",
+      "description": "作为用户，我想要绘制圆弧，以便创建弧形线条。",
+      "acceptanceCriteria": [
+        "支持三点画弧：起点、经过点、终点",
+        "支持圆心+起点+角度模式",
+        "支持命令行输入：ARC 0,0 50,0 25,25（三点坐标）",
+        "圆弧可被选中，选中时显示端点和中点夹点",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "图形选择与夹点编辑",
+      "description": "作为用户，我想要选择图形并通过拖拽夹点修改形状。",
+      "acceptanceCriteria": [
+        "单击选择单个图元，选中高亮显示",
+        "框选（从左到右拖拽）选择区域内所有图元",
+        "交叉选择（从右到左拖拽）选择与框相交的所有图元",
+        "按住Shift点击可从选择集中移除图元",
+        "拖拽夹点可实时修改图形形状",
+        "选中图元后显示属性面板（坐标、长度等）",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "复制功能",
+      "description": "作为用户，我想要复制选中的图形到指定位置。",
+      "acceptanceCriteria": [
+        "选择图元后，点击复制命令或输入COPY",
+        "指定基点和目标点（或输入位移偏移量）",
+        "支持多重复制（连续指定多个目标点，按Enter结束）",
+        "复制后原图保留，新图出现在目标位置",
+        "快捷键Ctrl+C可复制选中图元到剪贴板",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "移动功能",
+      "description": "作为用户，我想要移动选中的图形到指定位置。",
+      "acceptanceCriteria": [
+        "选择图元后，点击移动命令或输入MOVE",
+        "指定基点和目标点（或输入位移偏移量）",
+        "移动后原位置图形消失，新位置出现",
+        "快捷键Ctrl+V可从剪贴板粘贴",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "倒圆角（Fillet）",
+      "description": "作为用户，我想要对两条线段进行倒圆角处理。",
+      "acceptanceCriteria": [
+        "输入FILLET命令或点击工具栏按钮",
+        "设置圆角半径（默认10，可通过命令行修改）",
+        "依次点击两条线段，自动生成圆弧连接",
+        "支持直线-直线、直线-圆弧、圆弧-圆弧的组合",
+        "如果两线不相交，自动延伸后倒圆角",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "倒角（Chamfer）",
+      "description": "作为用户，我想要对两条线段进行倒角处理。",
+      "acceptanceCriteria": [
+        "输入CHAMFER命令或点击工具栏按钮",
+        "设置倒角距离（默认10，可分别设置两个距离）",
+        "依次点击两条线段，自动生成倒角线",
+        "支持等距倒角和不等距倒角",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "延伸（Extend）",
+      "description": "作为用户，我想要将线段延伸到指定边界。",
+      "acceptanceCriteria": [
+        "输入EXTEND命令或点击工具栏按钮",
+        "先选择边界线，再选择要延伸的线段",
+        "线段自动延伸至与边界线相交",
+        "支持延伸直线到圆弧、圆弧到直线",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "清除（Erase）",
+      "description": "作为用户，我想要删除选中的图形。",
+      "acceptanceCriteria": [
+        "选择图元后，按Delete键或输入ERASE命令删除",
+        "支持清除全部：ERASE ALL或工具栏按钮",
+        "删除前显示确认对话框（可选配置）",
+        "支持撤销删除操作（Ctrl+Z）",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "命令行交互",
+      "description": "作为用户，我想要通过底部命令行输入CAD命令来操作图形。",
+      "acceptanceCriteria": [
+        "底部显示命令输入框，显示当前命令提示符（如命令:）",
+        "支持输入完整命令名（如LINE、CIRCLE、ARC）",
+        "支持输入命令缩写（如L→LINE、C→CIRCLE、A→ARC）",
+        "命令执行后显示操作反馈（如已绘制直线）",
+        "支持命令历史记录（上下箭头翻阅）",
+        "命令行支持输入坐标值（绝对坐标50,100和相对坐标@50,100）",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "快捷键支持",
+      "description": "作为用户，我想要使用键盘快捷键快速执行常用操作。",
+      "acceptanceCriteria": [
+        "L键触发直线命令，C键触发圆形命令，A键触发圆弧命令",
+        "M键触发移动命令，CO键触发复制命令，E键触发删除命令",
+        "F键触发倒圆角命令，CHA键触发倒角命令，EX键触发延伸命令",
+        "Ctrl+Z撤销、Ctrl+Y重做、Ctrl+S保存DXF、Ctrl+O打开DXF",
+        "F8正交模式开关、F3捕捉模式开关",
+        "快捷键在输入框聚焦时禁用，不与浏览器默认快捷键冲突",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "DXF文件导入（打开）",
+      "description": "作为用户，我想要打开已有的DXF文件查看和编辑。",
+      "acceptanceCriteria": [
+        "支持通过菜单文件→打开或Ctrl+O打开文件选择对话框",
+        "支持命令行输入OPEN命令打开文件",
+        "解析DXF文件中的LINE、CIRCLE、ARC实体",
+        "解析DXF中的图层信息并保留图层颜色",
+        "支持DXF版本：R12至R32（8个版本）",
+        "导入后自动调整视图以显示全部图形（Zoom Extents）",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "DXF文件导出（保存）",
+      "description": "作为用户，我想要将当前绘制的图形保存为DXF文件。",
+      "acceptanceCriteria": [
+        "支持通过菜单文件→保存或Ctrl+S触发保存",
+        "支持命令行输入SAVE命令保存文件",
+        "导出为DXF格式，包含所有LINE、CIRCLE、ARC实体",
+        "保留图层信息和颜色设置",
+        "默认导出为R15(2000)版本DXF格式",
+        "文件自动下载为.dxf扩展名",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "撤销/重做",
+      "description": "作为用户，我想要撤销或重做操作，以便修正错误。",
+      "acceptanceCriteria": [
+        "支持无限次撤销（内存限制内）",
+        "Ctrl+Z撤销上一步操作",
+        "Ctrl+Y重做上一步撤销的操作",
+        "工具栏显示撤销/重做按钮及可操作次数",
+        "撤销栈包含所有图形编辑操作",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "图层管理",
+      "description": "作为用户，我想要管理图层，以便组织图形元素。",
+      "acceptanceCriteria": [
+        "右侧属性面板中显示图层列表",
+        "支持创建、删除、重命名图层",
+        "支持设置图层颜色（8种标准颜色）",
+        "支持图层的显示/隐藏切换（眼睛图标）",
+        "支持图层的锁定/解锁",
+        "新建图形默认包含0图层",
+        "绘制时可选择当前图层，图形归属当前图层",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "经典AutoCAD风格UI布局",
+      "description": "作为用户，我想要一个类似AutoCAD的经典界面布局。",
+      "acceptanceCriteria": [
+        "顶部菜单栏：文件、编辑、视图、绘图、修改、帮助",
+        "左侧工具栏：直线、圆形、圆弧、选择、移动、复制、删除等工具按钮",
+        "中央绘图区域（Canvas画布）",
+        "底部命令行区域（可折叠）",
+        "右侧属性面板（可折叠，显示选中图元属性）",
+        "状态栏：显示鼠标坐标、当前图层、正交/捕捉状态",
+        "工具栏按钮有图标和工具提示（tooltip）",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
