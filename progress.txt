@@ -1,0 +1,27 @@
+## Codebase Patterns
+- Entity classes extend abstract `Entity` in `src/core/Entity.ts` — implement `getBoundingBox`, `getGripPoints`, `draw`, `hitTest`, `move`, `moveGripPoint`, `clone`
+- Tool classes extend `BaseTool` in `src/core/tools/Tool.ts` — implement `name`, `onMouseDown/Move/Up`, `onKeyDown`, `drawOverlay`
+- Each tool has a static `parseCommandLine(args)` method for command-line creation
+- Tools register via `ToolManager.register()` in `CAD.ts` setupTools()
+- Commands handled in `CAD.ts` `executeCommand()` switch block
+- `drawOverlay` receives `{ worldToScreen }` — NOT the full Viewport; compute screen distances via `Math.hypot` on screen coords
+- Exports go in both `src/core/tools/index.ts` and `src/index.ts`
+- Demo at `demo/index.html` needs toolbar click handler + keyboard shortcut for each new tool
+- `EntityManager` handles all entity CRUD, selection, and hit testing
+- Grip point types: `'endpoint' | 'midpoint' | 'center' | 'quadrant'`
+- Entity types: `'line' | 'circle' | 'arc'`
+- Build: `tsc && vite build` — typecheck first, then bundle
+- Run `npx tsc --noEmit` for quick typecheck without building
+
+---
+
+## 2026-07-07 - US-003
+- Implemented CircleEntity and CircleTool
+- Files changed: `src/core/Entity.ts`, `src/core/tools/CircleTool.ts` (new), `src/core/CAD.ts`, `src/core/tools/index.ts`, `src/index.ts`, `demo/index.html`, `tasks/prd.json`
+- CircleEntity: center+radius model, 5 grip points (center + 4 quadrants), hitTest on circumference
+- CircleTool: centerRadius mode (click center, drag radius) and twoPoint mode (click diameter endpoints)
+- Command: CIRCLE cx,cy radius (also C alias)
+- **Learnings for future iterations:**
+  - `drawOverlay` viewport param is `{ worldToScreen }` only — use `Math.hypot` on screen coords for radius display, not `viewport.scale`
+  - Arc entity (US-004) will follow same pattern as CircleEntity but with start/end angles
+---
