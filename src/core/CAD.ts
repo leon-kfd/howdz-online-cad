@@ -10,6 +10,7 @@ import { CircleTool } from './tools/CircleTool';
 import { ArcTool } from './tools/ArcTool';
 import { CopyTool } from './tools/CopyTool';
 import { MoveTool } from './tools/MoveTool';
+import { FilletTool } from './tools/FilletTool';
 import { LineEntity, CircleEntity, ArcEntity } from './Entity';
 
 /**
@@ -169,6 +170,12 @@ export class HowdzCAD {
     const moveTool = new MoveTool(this.entityManager);
     this.toolManager.register(moveTool);
 
+    // 注册倒圆角工具
+    const filletTool = new FilletTool(this.entityManager, (entity) => {
+      this.entityManager.add(entity);
+    });
+    this.toolManager.register(filletTool);
+
     // 默认激活选择工具
     this.toolManager.setActiveTool('select');
 
@@ -320,6 +327,18 @@ export class HowdzCAD {
       case 'MOVE':
       case 'M': {
         this.toolManager.setActiveTool('move');
+        return true;
+      }
+      case 'FILLET':
+      case 'F': {
+        const result = FilletTool.parseCommandLine(args);
+        if (result) {
+          const filletTool = this.toolManager.getTool('fillet') as FilletTool;
+          if (filletTool) filletTool.setRadius(result.radius);
+          return true;
+        }
+        // 切换到倒圆角工具
+        this.toolManager.setActiveTool('fillet');
         return true;
       }
       default:

@@ -10,3 +10,5 @@ export type { ArcDrawMode, ArcEntityCreatedCallback } from './ArcTool';
 export { CopyTool } from './CopyTool';
 export type { CopyEntityCreatedCallback } from './CopyTool';
 export { MoveTool } from './MoveTool';
+export { FilletTool } from './FilletTool';
+export { computeLineLineFillet } from './FilletTool';

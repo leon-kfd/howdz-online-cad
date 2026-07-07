@@ -12,5 +12,6 @@ export { CircleTool } from './core/tools/CircleTool';
 export { ArcTool } from './core/tools/ArcTool';
 export { CopyTool } from './core/tools/CopyTool';
 export { MoveTool } from './core/tools/MoveTool';
+export { FilletTool, computeLineLineFillet } from './core/tools/FilletTool';
 export type { Tool, ToolContext } from './core/tools/Tool';
 export type { CADOptions, Point, BoundingBox, ViewportState } from './core/types';
