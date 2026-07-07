@@ -3,6 +3,7 @@ import { Renderer } from './Renderer';
 import { CADOptions, Point } from './types';
 import { formatCoord } from '../utils/math';
 import { EntityManager } from './EntityManager';
+import { LayerManager } from './LayerManager';
 import { ToolManager } from './tools/ToolManager';
 import { SelectTool } from './tools/SelectTool';
 import { LineTool } from './tools/LineTool';
@@ -13,7 +14,7 @@ import { MoveTool } from './tools/MoveTool';
 import { FilletTool } from './tools/FilletTool';
 import { ChamferTool } from './tools/ChamferTool';
 import { ExtendTool } from './tools/ExtendTool';
-import { LineEntity, CircleEntity, ArcEntity } from './Entity';
+import { Entity, LineEntity, CircleEntity, ArcEntity } from './Entity';
 import { DXFParser, DXFParseResult } from './DXFParser';
 import { DXFWriter } from './DXFWriter';
 
@@ -29,6 +30,7 @@ export class HowdzCAD {
   private statusBar: HTMLElement | null = null;
 
   private entityManager: EntityManager;
+  private layerManager: LayerManager;
   private toolManager: ToolManager;
 
   private options: Required<CADOptions>;
@@ -66,6 +68,10 @@ export class HowdzCAD {
     // 初始化实体管理器
     this.entityManager = new EntityManager();
 
+    // 初始化图层管理器
+    this.layerManager = new LayerManager();
+    this.entityManager.setLayerManager(this.layerManager);
+
     // 初始化渲染器
     this.renderer = new Renderer(this.canvas, this.viewport, {
       showGrid: this.options.showGrid,
@@ -75,6 +81,7 @@ export class HowdzCAD {
       gridMajorColor: this.options.gridMajorColor,
       entityManager: this.entityManager,
     });
+    this.renderer.setLayerManager(this.layerManager);
 
     // 初始化工具管理器
     this.toolManager = new ToolManager();
@@ -142,30 +149,39 @@ export class HowdzCAD {
    * 设置工具
    */
   private setupTools(): void {
+    // 辅助函数：为新实体设置当前图层
+    const setCurrentLayer = (entity: Entity) => {
+      entity.layer = this.layerManager.getCurrentLayer();
+    };
+
     // 注册选择工具
     const selectTool = new SelectTool(this.entityManager, this.viewport);
     this.toolManager.register(selectTool);
 
     // 注册直线工具
     const lineTool = new LineTool((entity: LineEntity) => {
+      setCurrentLayer(entity);
       this.entityManager.add(entity);
     });
     this.toolManager.register(lineTool);
 
     // 注册圆形工具
     const circleTool = new CircleTool((entity: CircleEntity) => {
+      setCurrentLayer(entity);
       this.entityManager.add(entity);
     });
     this.toolManager.register(circleTool);
 
     // 注册圆弧工具
     const arcTool = new ArcTool((entity: ArcEntity) => {
+      setCurrentLayer(entity);
       this.entityManager.add(entity);
     });
     this.toolManager.register(arcTool);
 
     // 注册复制工具
     const copyTool = new CopyTool(this.entityManager, (entity) => {
+      setCurrentLayer(entity);
       this.entityManager.add(entity);
     });
     this.toolManager.register(copyTool);
@@ -176,12 +192,14 @@ export class HowdzCAD {
 
     // 注册倒圆角工具
     const filletTool = new FilletTool(this.entityManager, (entity) => {
+      setCurrentLayer(entity);
       this.entityManager.add(entity);
     });
     this.toolManager.register(filletTool);
 
     // 注册倒角工具
     const chamferTool = new ChamferTool(this.entityManager, (entity) => {
+      setCurrentLayer(entity);
       this.entityManager.add(entity);
     });
     this.toolManager.register(chamferTool);
@@ -219,6 +237,7 @@ export class HowdzCAD {
     const snap = this.toolManager.snapMode ? '捕捉' : '';
     const entityCount = this.entityManager.getCount();
     const selectedCount = this.entityManager.getSelectedCount();
+    const currentLayer = this.layerManager.getCurrentLayer();
 
     let statusHtml = `
       <span>X: ${formatCoord(mouseWorld.x)}</span>
@@ -237,6 +256,7 @@ export class HowdzCAD {
     }
 
     statusHtml += `
+      <span>图层: ${currentLayer}</span>
       <span>图元: ${entityCount}</span>
     `;
 
@@ -282,6 +302,13 @@ export class HowdzCAD {
    */
   public getToolManager(): ToolManager {
     return this.toolManager;
+  }
+
+  /**
+   * 获取图层管理器
+   */
+  public getLayerManager(): LayerManager {
+    return this.layerManager;
   }
 
   /**
@@ -416,6 +443,50 @@ export class HowdzCAD {
         // SAVE命令触发DXF导出（由demo层处理）
         return true;
       }
+      case 'LAYER':
+      case 'LA': {
+        return this.executeLayerCommand(args);
+      }
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * 执行图层子命令
+   * 支持: LAYER NEW <name> [color], LAYER DEL <name>, LAYER SET <name>
+   * @returns 子命令执行结果（true=成功, false=未知子命令）
+   */
+  private executeLayerCommand(args: string): boolean {
+    if (!args) {
+      // 无参数：显示图层列表（由demo层处理显示）
+      return true;
+    }
+
+    const parts = args.trim().split(/\s+/);
+    const subCmd = parts[0].toUpperCase();
+
+    switch (subCmd) {
+      case 'NEW':
+      case 'N': {
+        const name = parts[1];
+        if (!name) return false;
+        const color = parts[2] || '#FFFFFF';
+        const layer = this.layerManager.addLayer(name, color);
+        return layer !== null;
+      }
+      case 'DEL':
+      case 'D': {
+        const name = parts[1];
+        if (!name) return false;
+        return this.layerManager.removeLayer(name);
+      }
+      case 'SET':
+      case 'S': {
+        const name = parts[1];
+        if (!name) return false;
+        return this.layerManager.setCurrentLayer(name);
+      }
       default:
         return false;
     }
@@ -437,6 +508,19 @@ export class HowdzCAD {
    */
   public loadDXF(content: string): DXFParseResult {
     const result = DXFParser.parse(content);
+
+    // 同步DXF图层到图层管理器
+    for (const dxfLayer of result.layers) {
+      if (!this.layerManager.hasLayer(dxfLayer.name)) {
+        this.layerManager.addLayer(dxfLayer.name, dxfLayer.color || '#FFFFFF');
+      }
+      const layer = this.layerManager.getLayer(dxfLayer.name);
+      if (layer) {
+        layer.visible = dxfLayer.visible;
+        layer.locked = dxfLayer.locked;
+        if (dxfLayer.color) layer.color = dxfLayer.color;
+      }
+    }
 
     // 添加解析到的实体
     if (result.entities.length > 0) {
@@ -461,7 +545,13 @@ export class HowdzCAD {
    * @returns DXF文件内容
    */
   public saveDXF(): string {
-    return DXFWriter.export(this.entityManager.getAll());
+    const layers = this.layerManager.getLayers().map(l => ({
+      name: l.name,
+      color: l.color,
+      visible: l.visible,
+      locked: l.locked,
+    }));
+    return DXFWriter.export(this.entityManager.getAll(), layers);
   }
 
   /**

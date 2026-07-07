@@ -1,6 +1,7 @@
 import { Entity } from './Entity';
 import { BoundingBox, Point } from './types';
 import { HistoryManager } from './commands/HistoryManager';
+import { LayerManager } from './LayerManager';
 
 /** 夹点命中结果 */
 export interface GripHitResult {
@@ -20,6 +21,8 @@ export class EntityManager {
   private selectedSet: Set<string> = new Set();
   /** 历史管理器 */
   private historyManager: HistoryManager;
+  /** 图层管理器引用 */
+  private layerManager: LayerManager | null = null;
   /** 旧版撤销栈（仅用于eraseSelected兼容） */
   private undoStack: Array<{ entities: Entity[]; index: number }> = [];
   /** 旧版重做栈 */
@@ -30,6 +33,32 @@ export class EntityManager {
 
   constructor() {
     this.historyManager = new HistoryManager();
+  }
+
+  /**
+   * 设置图层管理器引用
+   */
+  public setLayerManager(layerManager: LayerManager): void {
+    this.layerManager = layerManager;
+  }
+
+  /**
+   * 获取图层管理器引用
+   */
+  public getLayerManager(): LayerManager | null {
+    return this.layerManager;
+  }
+
+  /**
+   * 检查实体是否可交互（可见且未锁定，包括图层级别）
+   */
+  public isEntityInteractive(entity: Entity): boolean {
+    if (!entity.visible || entity.locked) return false;
+    if (this.layerManager) {
+      if (!this.layerManager.isLayerVisible(entity.layer)) return false;
+      if (this.layerManager.isLayerLocked(entity.layer)) return false;
+    }
+    return true;
   }
 
   /**
@@ -111,7 +140,7 @@ export class EntityManager {
     const hits: Entity[] = [];
     for (let i = this.entities.length - 1; i >= 0; i--) {
       const entity = this.entities[i];
-      if (!entity.visible || entity.locked) continue;
+      if (!this.isEntityInteractive(entity)) continue;
       if (entity.hitTest(worldX, worldY, tolerance)) {
         hits.push(entity);
       }
@@ -127,7 +156,7 @@ export class EntityManager {
     let bestResult: GripHitResult | null = null;
 
     for (const entity of this.entities) {
-      if (!entity.visible || entity.locked) continue;
+      if (!this.isEntityInteractive(entity)) continue;
       if (!this.selectedSet.has(entity.id)) continue;
 
       const grips = entity.getGripPoints();
@@ -150,7 +179,7 @@ export class EntityManager {
   public hitTestBoundingBox(bbox: BoundingBox, onlyFullyContained: boolean): Entity[] {
     const hits: Entity[] = [];
     for (const entity of this.entities) {
-      if (!entity.visible || entity.locked) continue;
+      if (!this.isEntityInteractive(entity)) continue;
       const eb = entity.getBoundingBox();
       if (onlyFullyContained) {
         // 完全包含

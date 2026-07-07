@@ -1,5 +1,6 @@
 import { Viewport } from './Viewport';
 import { EntityManager } from './EntityManager';
+import { LayerManager } from './LayerManager';
 import { calculateGridSpacing } from '../utils/math';
 
 /** 默认颜色配置 */
@@ -22,6 +23,7 @@ export class Renderer {
   private ctx: CanvasRenderingContext2D;
   private viewport: Viewport;
   private entityManager: EntityManager | null = null;
+  private layerManager: LayerManager | null = null;
   private colors: typeof DEFAULT_COLORS;
 
   private showGrid: boolean;
@@ -75,6 +77,13 @@ export class Renderer {
    */
   public setOverlayRenderer(renderer: (ctx: CanvasRenderingContext2D) => void): void {
     this.overlayRenderer = renderer;
+  }
+
+  /**
+   * 设置图层管理器引用
+   */
+  public setLayerManager(layerManager: LayerManager): void {
+    this.layerManager = layerManager;
   }
 
   /**
@@ -167,8 +176,22 @@ export class Renderer {
     const entities = this.entityManager.getAll();
     for (const entity of entities) {
       if (!entity.visible) continue;
+
+      // 检查图层可见性
+      if (this.layerManager && !this.layerManager.isLayerVisible(entity.layer)) continue;
+
       const selected = this.entityManager.isSelected(entity);
+
+      // 解析实体颜色：实体颜色 > 图层颜色 > 默认颜色
+      const originalColor = entity.color;
+      if (!entity.color && this.layerManager) {
+        entity.color = this.layerManager.getLayerColor(entity.layer);
+      }
+
       entity.draw(this.ctx, this.viewport, selected);
+
+      // 恢复原始颜色（null表示跟随图层）
+      entity.color = originalColor;
     }
   }
 

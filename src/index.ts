@@ -5,6 +5,8 @@ export { EntityManager } from './core/EntityManager';
 export type { GripHitResult } from './core/EntityManager';
 export { Entity, LineEntity, CircleEntity, ArcEntity } from './core/Entity';
 export type { EntityType, EntityData, GripPoint } from './core/Entity';
+export { LayerManager } from './core/LayerManager';
+export type { LayerInfo } from './core/LayerManager';
 export { ToolManager } from './core/tools/ToolManager';
 export { SelectTool } from './core/tools/SelectTool';
 export { LineTool } from './core/tools/LineTool';

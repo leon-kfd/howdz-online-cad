@@ -15,6 +15,7 @@
 - DXF operations: `DXFParser.parse(content)` → `{ entities, layers, version }`; `HowdzCAD.loadDXF(content)` adds parsed entities + auto zoom-extents
 - DXF export: `DXFWriter.export(entities, layers?)` → DXF string; `HowdzCAD.saveDXF()` exports current entities; demo triggers download via Blob+URL.createObjectURL
 - File I/O (open/save) lives in demo layer via hidden `<input type="file">` (open) and Blob+`<a>` click (save) — core library has no DOM file API
+- Layer system: `LayerManager` manages layers (CRUD, visibility, lock, current layer); EntityManager/Renderer check layer state via `isEntityInteractive()`/`isLayerVisible()`; entity color falls back to layer color when null; new entities auto-assigned to current layer in `setupTools()` callback
 
 ---
 
@@ -227,4 +228,22 @@
   - Tools should call `entityManager.getHistoryManager().execute(command)` instead of direct entity modification
   - Undo/redo buttons use setInterval(500ms) to poll state — could be optimized with onChange callback
   - Old eraseSelected undo stack kept for backward compatibility; new code should use Command pattern
+---
+
+## 2026-07-07 - US-017
+- Implemented layer management system with LayerManager core class
+- Files changed: `src/core/LayerManager.ts` (new), `src/core/EntityManager.ts`, `src/core/Renderer.ts`, `src/core/CAD.ts`, `src/index.ts`, `demo/index.html`
+- LayerManager: CRUD operations (add/remove/rename), 8 standard ACI colors, visibility/lock toggles, current layer tracking
+- EntityManager: added `isEntityInteractive()` that checks both entity and layer visibility/lock; hitTest/hitTestGripPoint/hitTestBoundingBox use it
+- Renderer: drawEntities checks layer visibility via LayerManager; resolves entity color from layer when entity.color is null
+- CAD.ts: integrated LayerManager, added LAYER/LA command (NEW/DEL/SET subcommands), status bar shows current layer, loadDXF syncs DXF layers, saveDXF exports with layer info
+- Demo: layer panel in right sidebar with layer list, color swatches (click to change), eye/lock icons, entity counts, add/delete/rename (double-click), current layer highlight
+- **Learnings for future iterations:**
+  - LayerManager is independent from EntityManager — wired via setLayerManager() in CAD constructor
+  - Entity color resolution: entity.color > layer.color > '#e0e0e0' default; Renderer temporarily sets entity.color before draw() then restores it
+  - Layer visibility/lock is checked at EntityManager level (isEntityInteractive) AND Renderer level (drawEntities) — both must check for consistent behavior
+  - New entities get current layer assigned in setupTools() callback via setCurrentLayer helper
+  - Layer panel uses event delegation for click/dblclick handlers on dynamically rendered layer items
+  - Color picker is a simple popup with 8 ACI colors, positioned relative to the color swatch element
+  - Layer rename updates entity.layer on all entities belonging to that layer
 ---
