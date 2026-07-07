@@ -15,5 +15,7 @@ export { MoveTool } from './core/tools/MoveTool';
 export { FilletTool, computeLineLineFillet } from './core/tools/FilletTool';
 export { ChamferTool, computeLineLineChamfer } from './core/tools/ChamferTool';
 export { ExtendTool } from './core/tools/ExtendTool';
+export { DXFParser } from './core/DXFParser';
+export type { DXFLayer, DXFParseResult } from './core/DXFParser';
 export type { Tool, ToolContext } from './core/tools/Tool';
 export type { CADOptions, Point, BoundingBox, ViewportState } from './core/types';

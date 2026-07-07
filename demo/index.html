@@ -394,6 +394,10 @@
           if (args.toUpperCase() === 'ALL') return '已清除全部图元';
           if (args.toUpperCase() === 'U' || args.toUpperCase() === 'UNDO') return '已撤销删除';
           return '已删除选中图元';
+        case 'OPEN':
+          return '正在打开DXF文件';
+        case 'SAVE':
+          return '保存功能待实现';
         default:
           return '命令已执行';
       }
@@ -413,6 +417,15 @@
 
         // 显示输入
         addHistory(`> ${value}`);
+
+        // 拦截OPEN命令，触发文件选择
+        const upperCmd = value.trim().toUpperCase();
+        if (upperCmd === 'OPEN') {
+          openDXFFile();
+          commandInput.value = '';
+          commandHistory.classList.add('visible');
+          return;
+        }
 
         // 执行命令并获取反馈
         const feedback = getCommandFeedback(value);
@@ -620,7 +633,7 @@
         if (key === 'o') {
           e.preventDefault();
           clearKeyBuffer();
-          addHistory('打开功能待实现 (DXF导入)', 'error');
+          openDXFFile();
           return;
         }
 
@@ -740,6 +753,41 @@
         return;
       }
     });
+
+    // ========== DXF文件操作 ==========
+    function openDXFFile() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.dxf';
+      input.style.display = 'none';
+      document.body.appendChild(input);
+
+      input.addEventListener('change', () => {
+        const file = input.files?.[0];
+        if (!file) {
+          input.remove();
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          const content = reader.result;
+          if (typeof content === 'string') {
+            const result = cad.loadDXF(content);
+            addHistory(`已打开 ${file.name}（${result.entities.length} 个图元，版本: ${result.version}）`, 'success');
+            updatePropertyPanel();
+          }
+          input.remove();
+        };
+        reader.onerror = () => {
+          addHistory('读取文件失败', 'error');
+          input.remove();
+        };
+        reader.readAsText(file);
+      });
+
+      input.click();
+    }
 
     // ========== 属性面板 ==========
     const panelContent = document.getElementById('panel-content');

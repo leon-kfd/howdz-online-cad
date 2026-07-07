@@ -14,6 +14,7 @@ import { FilletTool } from './tools/FilletTool';
 import { ChamferTool } from './tools/ChamferTool';
 import { ExtendTool } from './tools/ExtendTool';
 import { LineEntity, CircleEntity, ArcEntity } from './Entity';
+import { DXFParser, DXFParseResult } from './DXFParser';
 
 /**
  * HowdzCAD 主类
@@ -407,6 +408,10 @@ export class HowdzCAD {
         this.entityManager.eraseSelected();
         return true;
       }
+      case 'OPEN': {
+        // OPEN命令触发文件选择（由demo层处理）
+        return true;
+      }
       default:
         return false;
     }
@@ -418,6 +423,54 @@ export class HowdzCAD {
   public zoomExtents(): void {
     const size = this.renderer.getSize();
     this.viewport.fitBounds(-100, -100, 100, 100, size.width, size.height);
+  }
+
+  /**
+   * 加载DXF文件内容
+   * 解析DXF中的LINE、CIRCLE、ARC实体并添加到画布
+   * @param content DXF文件文本内容
+   * @returns 解析结果（实体数、版本等）
+   */
+  public loadDXF(content: string): DXFParseResult {
+    const result = DXFParser.parse(content);
+
+    // 添加解析到的实体
+    if (result.entities.length > 0) {
+      this.entityManager.clear();
+      this.entityManager.addAll(result.entities);
+    }
+
+    // 缩放到全部显示
+    if (result.entities.length > 0) {
+      const bbox = this.computeEntitiesBounds();
+      if (bbox) {
+        const size = this.renderer.getSize();
+        this.viewport.fitBounds(bbox.minX, bbox.minY, bbox.maxX, bbox.maxY, size.width, size.height);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * 计算所有实体的包围盒
+   */
+  private computeEntitiesBounds(): { minX: number; minY: number; maxX: number; maxY: number } | null {
+    const entities = this.entityManager.getAll();
+    if (entities.length === 0) return null;
+
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+
+    for (const entity of entities) {
+      const bb = entity.getBoundingBox();
+      if (bb.minX < minX) minX = bb.minX;
+      if (bb.minY < minY) minY = bb.minY;
+      if (bb.maxX > maxX) maxX = bb.maxX;
+      if (bb.maxY > maxY) maxY = bb.maxY;
+    }
+
+    return { minX, minY, maxX, maxY };
   }
 
   /**
