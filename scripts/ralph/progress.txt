@@ -1,3 +1,29 @@
 # Ralph Progress Log
 Started: 2026年07月 7日 16:09:39
 ---
+
+## Codebase Patterns
+- Project uses Vite + TypeScript in library mode (src/index.ts as entry)
+- Canvas rendering uses requestAnimationFrame loop in Renderer class
+- Viewport handles all coordinate transforms (screenToWorld/worldToScreen)
+- Entity base class with abstract methods for draw/hitTest/move/clone
+- Grid uses niceNumber() for 1-2-5 adaptive spacing
+- Build: `tsc && vite build`; typecheck: `npx tsc --noEmit`
+- Status bar created in CAD.ts createDOM() method
+- Entity types defined in src/core/types.ts and src/core/Entity.ts
+
+## 2026-07-07 16:10 - US-001
+- Verified existing implementation covers all US-001 acceptance criteria
+- Canvas 2D rendering with middle-mouse drag panning (Viewport.ts)
+- Mouse wheel zoom 0.01x-100x centered on mouse position (Viewport.ts)
+- Grid background with toggle + 1-2-5 adaptive density via niceNumber() (Renderer.ts)
+- Origin marker (red X-axis, green Y-axis) and crosshair cursor (Renderer.ts)
+- Bottom status bar showing mouse coordinates, zoom level, FPS (CAD.ts)
+- requestAnimationFrame rendering loop (Renderer.ts)
+- Files: src/core/CAD.ts, src/core/Viewport.ts, src/core/Renderer.ts, src/core/Entity.ts, src/core/types.ts, src/utils/math.ts, src/index.ts, demo/index.html
+- **Learnings for future iterations:**
+  - The CADOptions interface in types.ts defines all configurable options
+  - Viewport class manages pan/zoom state and coordinate transforms
+  - Renderer only handles drawing; entity rendering will need integration with Renderer
+  - The demo page at demo/index.html has a full UI layout with menu, toolbar, canvas, and command line
+---

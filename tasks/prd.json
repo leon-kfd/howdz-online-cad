@@ -18,8 +18,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 1,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "All criteria verified: Canvas 2D rendering, middle-mouse pan, wheel zoom 0.01x-100x, adaptive grid (1-2-5), origin axes, crosshair, status bar (coords/zoom/FPS), requestAnimationFrame rendering, typecheck passes."
     },
     {
       "id": "US-002",
