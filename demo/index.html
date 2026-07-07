@@ -271,7 +271,7 @@
         <button class="tool-btn" id="tool-copy" title="复制 (CO)">
           <svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="1" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 16V5a1 1 0 0 1 1-1h11" stroke="currentColor" stroke-width="2" fill="none"/></svg>
         </button>
-        <button class="tool-btn" title="删除 (E)">
+        <button class="tool-btn" id="tool-erase" title="删除 (E / Delete)">
           <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" fill="none"/></svg>
         </button>
         <div class="tool-divider"></div>
@@ -445,6 +445,15 @@
     document.getElementById('tool-extend')?.addEventListener('click', () => {
       toolManager.setActiveTool('extend');
     });
+    document.getElementById('tool-erase')?.addEventListener('click', () => {
+      const count = cad.eraseSelected();
+      if (count > 0) {
+        updatePropertyPanel();
+        addHistory(`已删除 ${count} 个图元`, 'success');
+      } else {
+        addHistory('未选中图元', 'error');
+      }
+    });
 
     // 键盘快捷键（命令行未聚焦时生效）
     document.addEventListener('keydown', (e) => {
@@ -511,6 +520,37 @@
           // 将选中实体的克隆存入剪贴板（简单实现：存到全局变量）
           window._cadClipboard = selected.map(e => e.clone());
           addHistory(`已复制 ${selected.length} 个图元`, 'success');
+        }
+        return;
+      }
+
+      // E 删除选中图元
+      if (key === 'e' && !e.ctrlKey) {
+        const count = cad.eraseSelected();
+        if (count > 0) {
+          updatePropertyPanel();
+          addHistory(`已删除 ${count} 个图元`, 'success');
+        }
+        return;
+      }
+
+      // Delete 键删除选中图元
+      if (e.key === 'Delete') {
+        const count = cad.eraseSelected();
+        if (count > 0) {
+          updatePropertyPanel();
+          addHistory(`已删除 ${count} 个图元`, 'success');
+        }
+        return;
+      }
+
+      // Ctrl+Z 撤销删除
+      if (key === 'z' && e.ctrlKey) {
+        e.preventDefault();
+        const count = cad.undo();
+        if (count > 0) {
+          updatePropertyPanel();
+          addHistory(`已撤销，恢复 ${count} 个图元`, 'success');
         }
         return;
       }

@@ -378,6 +378,30 @@ export class HowdzCAD {
         this.toolManager.setActiveTool('extend');
         return true;
       }
+      case 'ERASE': {
+        const upperArgs = args.toUpperCase();
+        if (upperArgs === 'ALL') {
+          // 清除全部
+          if (this.entityManager.getCount() === 0) return true;
+          if (confirm(`确定要删除全部 ${this.entityManager.getCount()} 个图元？`)) {
+            this.entityManager.clear();
+          }
+          return true;
+        }
+        if (upperArgs === 'U' || upperArgs === 'UNDO') {
+          // 撤销上一次删除
+          const count = this.entityManager.undo();
+          return count > 0;
+        }
+        // 删除选中实体
+        this.entityManager.eraseSelected();
+        return true;
+      }
+      case 'E': {
+        // E 短命令：删除选中实体
+        this.entityManager.eraseSelected();
+        return true;
+      }
       default:
         return false;
     }
@@ -417,6 +441,29 @@ export class HowdzCAD {
    */
   public getMousePosition(): Point {
     return { ...this.viewport.mouseWorld };
+  }
+
+  /**
+   * 删除选中的实体（支持撤销）
+   * @returns 被删除的实体数量
+   */
+  public eraseSelected(): number {
+    return this.entityManager.eraseSelected();
+  }
+
+  /**
+   * 撤销上一次删除操作
+   * @returns 恢复的实体数量
+   */
+  public undo(): number {
+    return this.entityManager.undo();
+  }
+
+  /**
+   * 是否有可撤销的操作
+   */
+  public canUndo(): boolean {
+    return this.entityManager.canUndo();
   }
 
   /**

@@ -136,3 +136,17 @@
   - `isPointOnArc` check is needed to filter line-circle intersections that fall outside the arc range
   - Extend button in toolbar already had placeholder SVG — just needed `id` and click handler
 ---
+
+## 2026-07-07 - US-011
+- Implemented erase/delete functionality with undo support
+- Files changed: `src/core/EntityManager.ts`, `src/core/CAD.ts`, `demo/index.html`, `tasks/prd.json`
+- EntityManager: added `eraseSelected()` (removes selected entities, pushes to undo stack), `undo()` (restores last deleted entities at original position), `canUndo()` (checks undo stack)
+- CAD.ts: added ERASE command (ERASE/E deletes selected, ERASE ALL clears all with confirm dialog, ERASE U/UNDO undoes), exposed `eraseSelected()`, `undo()`, `canUndo()` as public API
+- Demo: Delete key and E shortcut erase selected entities, Ctrl+Z undoes last delete, toolbar erase button with id `tool-erase`
+- **Learnings for future iterations:**
+  - Undo stack in EntityManager stores `{ entities, index }` — index is the position of the first deleted entity, used to restore at the correct location
+  - `eraseSelected()` iterates selected entities and splices each from the array; could be optimized to batch-remove if performance is a concern
+  - ERASE ALL uses `confirm()` dialog — could be made configurable later
+  - US-016 (full undo/redo) will need a more general undo stack; the current implementation is delete-specific and can be extended
+  - `E` key shortcut for erase doesn't conflict with any existing shortcuts
+---

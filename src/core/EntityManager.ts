@@ -9,6 +9,16 @@ export interface GripHitResult {
 }
 
 /**
+ * 撤销条目
+ */
+interface UndoEntry {
+  /** 被删除的实体（按顺序） */
+  entities: Entity[];
+  /** 在原数组中的插入位置 */
+  index: number;
+}
+
+/**
  * 实体管理器
  * 管理所有CAD实体的增删查改和选择操作
  */
@@ -17,6 +27,8 @@ export class EntityManager {
   private entities: Entity[] = [];
   /** 选中的实体集合 */
   private selectedSet: Set<string> = new Set();
+  /** 撤销栈（仅用于删除操作） */
+  private undoStack: UndoEntry[] = [];
 
   /** 实体变更回调 */
   public onChange: (() => void) | null = null;
@@ -236,5 +248,55 @@ export class EntityManager {
    */
   public getSelectedCount(): number {
     return this.selectedSet.size;
+  }
+
+  // ========== 删除与撤销 ==========
+
+  /**
+   * 删除选中的实体（支持撤销）
+   * @returns 被删除的实体数量
+   */
+  public eraseSelected(): number {
+    const selected = this.getSelected();
+    if (selected.length === 0) return 0;
+
+    // 记录第一个被删实体在数组中的位置（用于精确撤销恢复位置）
+    const firstIndex = this.entities.indexOf(selected[0]);
+
+    // 从实体数组中移除
+    for (const entity of selected) {
+      const idx = this.entities.indexOf(entity);
+      if (idx !== -1) {
+        this.entities.splice(idx, 1);
+      }
+    }
+    this.selectedSet.clear();
+
+    // 压入撤销栈
+    this.undoStack.push({ entities: selected, index: firstIndex });
+    this.onChange?.();
+    return selected.length;
+  }
+
+  /**
+   * 撤销上一次删除操作
+   * @returns 恢复的实体数量，如果没有可撤销的操作返回 0
+   */
+  public undo(): number {
+    const entry = this.undoStack.pop();
+    if (!entry) return 0;
+
+    // 在原位置插入恢复的实体（钳制到有效范围）
+    const insertAt = Math.min(entry.index, this.entities.length);
+    this.entities.splice(insertAt, 0, ...entry.entities);
+    this.onChange?.();
+    return entry.entities.length;
+  }
+
+  /**
+   * 是否有可撤销的操作
+   */
+  public canUndo(): boolean {
+    return this.undoStack.length > 0;
   }
 }
