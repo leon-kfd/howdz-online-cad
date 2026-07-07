@@ -342,6 +342,63 @@
     let commandHistoryList = [];
     let historyIndex = -1;
 
+    /**
+     * 获取命令执行反馈信息
+     * 根据命令类型返回具体的操作描述
+     */
+    function getCommandFeedback(cmdLine) {
+      const trimmed = cmdLine.trim();
+      const spaceIndex = trimmed.indexOf(' ');
+      const cmd = (spaceIndex === -1 ? trimmed : trimmed.substring(0, spaceIndex)).toUpperCase();
+      const args = spaceIndex === -1 ? '' : trimmed.substring(spaceIndex + 1).trim();
+
+      switch (cmd) {
+        case 'LINE':
+        case 'L':
+          if (args) return '已绘制直线';
+          return '已切换到直线工具';
+        case 'CIRCLE':
+        case 'C':
+          if (args) return '已绘制圆形';
+          return '已切换到圆形工具';
+        case 'ARC':
+        case 'A':
+          if (args) return '已绘制圆弧';
+          return '已切换到圆弧工具';
+        case 'SELECT':
+        case 'SEL':
+          return '已切换到选择工具';
+        case 'COPY':
+        case 'CO':
+          return '已切换到复制工具';
+        case 'MOVE':
+        case 'M':
+          return '已切换到移动工具';
+        case 'FILLET':
+        case 'F':
+          if (args && args.toUpperCase().startsWith('R')) {
+            return '已设置圆角半径';
+          }
+          return '已切换到倒圆角工具';
+        case 'CHAMFER':
+        case 'CHA':
+          if (args && args.toUpperCase().startsWith('D')) {
+            return '已设置倒角距离';
+          }
+          return '已切换到倒角工具';
+        case 'EXTEND':
+        case 'EX':
+          return '已切换到延伸工具';
+        case 'ERASE':
+        case 'E':
+          if (args.toUpperCase() === 'ALL') return '已清除全部图元';
+          if (args.toUpperCase() === 'U' || args.toUpperCase() === 'UNDO') return '已撤销删除';
+          return '已删除选中图元';
+        default:
+          return '命令已执行';
+      }
+    }
+
     commandInput.addEventListener('keydown', (e) => {
       // 阻止事件传播到CAD的键盘处理
       e.stopPropagation();
@@ -357,10 +414,11 @@
         // 显示输入
         addHistory(`> ${value}`);
 
-        // 执行命令
+        // 执行命令并获取反馈
+        const feedback = getCommandFeedback(value);
         const result = cad.executeCommand(value);
         if (result) {
-          addHistory('命令已执行', 'success');
+          addHistory(feedback, 'success');
         } else {
           addHistory('未知命令: ' + value, 'error');
         }

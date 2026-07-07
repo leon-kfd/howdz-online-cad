@@ -170,11 +170,18 @@ export class LineTool extends BaseTool {
 
   /**
    * 从命令行参数创建直线
-   * 格式: "x1,y1 x2,y2"
+   * 格式: "x1,y1 x2,y2" 或 "x1,y1 @dx,dy"（相对坐标）
    */
   public static parseCommandLine(input: string): { start: Point; end: Point } | null {
-    // 支持格式: "0,0 100,100" 或 "0,0,100,100"
-    const parts = input.trim().split(/[\s,]+/);
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+
+    // 尝试解析两个坐标对（支持相对坐标）
+    const twoPointResult = LineTool.tryParseTwoPoints(trimmed);
+    if (twoPointResult) return twoPointResult;
+
+    // 尝试解析四个数值 "x1 y1 x2 y2"
+    const parts = trimmed.split(/[\s,]+/);
     if (parts.length === 4) {
       const nums = parts.map(Number);
       if (nums.every(n => !isNaN(n))) {
@@ -184,18 +191,37 @@ export class LineTool extends BaseTool {
         };
       }
     }
-    if (parts.length === 2) {
-      // 两个坐标对 "x1,y1 x2,y2"
-      const coords = parts.map(p => p.split(',').map(Number));
-      if (coords.length === 2 && coords[0].length === 2 && coords[1].length === 2) {
-        if (coords[0].every(n => !isNaN(n)) && coords[1].every(n => !isNaN(n))) {
-          return {
-            start: { x: coords[0][0], y: coords[0][1] },
-            end: { x: coords[1][0], y: coords[1][1] },
-          };
-        }
-      }
-    }
+
     return null;
+  }
+
+  /**
+   * 尝试解析两个坐标对，支持相对坐标 @dx,dy
+   */
+  private static tryParseTwoPoints(input: string): { start: Point; end: Point } | null {
+    // 分割为两个部分（按空格分割，但要处理带逗号的坐标）
+    const spaceIndex = input.indexOf(' ');
+    if (spaceIndex === -1) return null;
+
+    const firstPart = input.substring(0, spaceIndex).trim();
+    const secondPart = input.substring(spaceIndex + 1).trim();
+
+    // 解析第一个点（绝对坐标）
+    const firstCoords = firstPart.split(',').map(Number);
+    if (firstCoords.length !== 2 || firstCoords.some(isNaN)) return null;
+
+    const start: Point = { x: firstCoords[0], y: firstCoords[1] };
+
+    // 解析第二个点（支持相对坐标 @dx,dy）
+    const isRelative = secondPart.startsWith('@');
+    const coordStr = isRelative ? secondPart.substring(1) : secondPart;
+    const secondCoords = coordStr.split(',').map(Number);
+    if (secondCoords.length !== 2 || secondCoords.some(isNaN)) return null;
+
+    const end: Point = isRelative
+      ? { x: start.x + secondCoords[0], y: start.y + secondCoords[1] }
+      : { x: secondCoords[0], y: secondCoords[1] };
+
+    return { start, end };
   }
 }

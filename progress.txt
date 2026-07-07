@@ -150,3 +150,16 @@
   - US-016 (full undo/redo) will need a more general undo stack; the current implementation is delete-specific and can be extended
   - `E` key shortcut for erase doesn't conflict with any existing shortcuts
 ---
+
+## 2026-07-07 - US-012
+- Enhanced command line interaction with specific feedback and relative coordinates
+- Files changed: `src/utils/math.ts`, `src/core/tools/LineTool.ts`, `demo/index.html`
+- Added `parseCoordinate()` utility in math.ts for parsing absolute and relative coordinates (`@dx,dy`)
+- Updated `LineTool.parseCommandLine()` to support relative coordinate syntax (e.g., `LINE 0,0 @50,100`)
+- Added `getCommandFeedback()` in demo to show specific messages (e.g., "已绘制直线", "已切换到圆形工具")
+- **Learnings for future iterations:**
+  - Relative coordinates `@dx,dy` are relative to the previous point in the same command
+  - `LineTool.tryParseTwoPoints()` handles coordinate pair parsing with relative support — reusable pattern for other tools
+  - Command feedback messages are generated in the demo layer, not in the core library — keeps core API clean
+  - CircleTool and ArcTool parseCommandLine already work with absolute coordinates; relative coord support can be added similarly if needed
+---

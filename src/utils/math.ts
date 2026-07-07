@@ -61,3 +61,48 @@ export function radToDeg(rad: number): number {
 export function formatCoord(value: number, decimals = 2): string {
   return value.toFixed(decimals);
 }
+
+/**
+ * 坐标点类型
+ */
+export interface CoordPoint {
+  x: number;
+  y: number;
+}
+
+/**
+ * 解析坐标字符串，支持绝对坐标和相对坐标
+ * - 绝对坐标: "50,100" 或 "50 100"
+ * - 相对坐标: "@50,100" 或 "@50 100"（相对于 reference 点）
+ * @returns 解析后的坐标点，失败返回 null
+ */
+export function parseCoordinate(
+  input: string,
+  reference?: CoordPoint,
+): CoordPoint | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  // 检查是否为相对坐标
+  const isRelative = trimmed.startsWith('@');
+  const coordStr = isRelative ? trimmed.substring(1).trim() : trimmed;
+
+  // 解析坐标值
+  const parts = coordStr.split(/[,\s]+/);
+  if (parts.length !== 2) return null;
+
+  const x = parseFloat(parts[0]);
+  const y = parseFloat(parts[1]);
+  if (isNaN(x) || isNaN(y)) return null;
+
+  // 相对坐标需要参考点
+  if (isRelative) {
+    if (!reference) return null;
+    return {
+      x: reference.x + x,
+      y: reference.y + y,
+    };
+  }
+
+  return { x, y };
+}
