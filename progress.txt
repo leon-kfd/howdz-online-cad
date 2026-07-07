@@ -13,7 +13,8 @@
 - Build: `tsc && vite build` — typecheck first, then bundle
 - Run `npx tsc --noEmit` for quick typecheck without building
 - DXF operations: `DXFParser.parse(content)` → `{ entities, layers, version }`; `HowdzCAD.loadDXF(content)` adds parsed entities + auto zoom-extents
-- File I/O (open/save) lives in demo layer via hidden `<input type="file">` — core library has no DOM file API
+- DXF export: `DXFWriter.export(entities, layers?)` → DXF string; `HowdzCAD.saveDXF()` exports current entities; demo triggers download via Blob+URL.createObjectURL
+- File I/O (open/save) lives in demo layer via hidden `<input type="file">` (open) and Blob+`<a>` click (save) — core library has no DOM file API
 
 ---
 
@@ -193,4 +194,19 @@
   - `loadDXF` clears existing entities before importing — could be made configurable (append vs replace) if needed
   - OPEN command is intercepted in demo layer (before `executeCommand`) to trigger file picker, since core library has no DOM file API
   - US-015 (DXF export) will reuse the entity-type detection pattern from DXFParser for serialization
+---
+
+## 2026-07-07 - US-015
+- Implemented DXF file export with writer and download integration
+- Files changed: `src/core/DXFWriter.ts` (new), `src/core/CAD.ts`, `src/index.ts`, `demo/index.html`, `tasks/prd.json`
+- DXFWriter: serializes entities to DXF R15 (AC1015) format with HEADER, TABLES (LAYER + LTYPE), and ENTITIES sections
+- CAD.ts: added `saveDXF()` public API that exports all entities as DXF string
+- Demo: Ctrl+S triggers DXF download as `drawing.dxf`; SAVE command triggers same flow
+- **Learnings for future iterations:**
+  - DXF export mirrors DXFParser structure — group code/value pairs on alternating lines
+  - ACI color mapping is the reverse of DXFParser's lookup: hex color → ACI index
+  - DXFWriter derives layers from entities if not explicitly provided
+  - Arc angles must be converted from radians to degrees for DXF output
+  - File download uses `Blob` + `URL.createObjectURL` + hidden `<a>` click pattern (same as file I/O in demo layer)
+  - SAVE command is intercepted in demo layer (before `executeCommand`) to trigger download, since core library has no DOM file API
 ---
