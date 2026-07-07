@@ -11,6 +11,13 @@ Started: 2026年07月 7日 16:09:39
 - Build: `tsc && vite build`; typecheck: `npx tsc --noEmit`
 - Status bar created in CAD.ts createDOM() method
 - Entity types defined in src/core/types.ts and src/core/Entity.ts
+- Tool system: Tool interface → BaseTool → concrete tools (SelectTool, LineTool)
+- Tools receive ToolContext with mouseWorld, mouseScreen, orthoMode, scale
+- ToolManager dispatches events to active tool, manages tool registration
+- EntityManager manages entity collection + selection state (Set of IDs)
+- Renderer draws: grid → axes → entities → crosshair → tool overlay
+- Command line: CAD.executeCommand() parses "CMD args" format
+- TypeScript strict: prefix unused params with _, use 'export type' for isolatedModules
 
 ## 2026-07-07 16:10 - US-001
 - Verified existing implementation covers all US-001 acceptance criteria
@@ -26,4 +33,24 @@ Started: 2026年07月 7日 16:09:39
   - Viewport class manages pan/zoom state and coordinate transforms
   - Renderer only handles drawing; entity rendering will need integration with Renderer
   - The demo page at demo/index.html has a full UI layout with menu, toolbar, canvas, and command line
+---
+
+## 2026-07-07 16:30 - US-002
+- Implemented complete line drawing system with interactive tools
+- **EntityManager** (src/core/EntityManager.ts): Entity collection with add/remove/select, hitTest, box selection
+- **Tool system** (src/core/tools/): Tool interface, ToolManager, SelectTool, LineTool
+- **LineTool**: Click two points to draw, continuous mode, ortho mode (F8), command line parsing
+- **SelectTool**: Single click select, Shift+toggle, box select (left-to-right), cross select (right-to-left)
+- **Renderer**: Updated to render entities from EntityManager + tool overlay
+- **CAD.ts**: Integrated EntityManager, ToolManager, command line executeCommand()
+- **demo/index.html**: Added line tool button, command input with history (up/down arrows)
+- Files: src/core/EntityManager.ts, src/core/tools/Tool.ts, src/core/tools/ToolManager.ts, src/core/tools/SelectTool.ts, src/core/tools/LineTool.ts, src/core/tools/index.ts, src/core/CAD.ts, src/core/Renderer.ts, src/index.ts, demo/index.html
+- **Learnings for future iterations:**
+  - Tool system uses ToolContext to pass mouse position, ortho mode, and scale
+  - Tools draw overlay via drawOverlay() method (rendered after entities, before crosshair)
+  - EntityManager stores selection as Set<string> of entity IDs
+  - Command line input in demo page needs e.stopPropagation() to prevent keyboard events reaching CAD
+  - SelectTool needs Viewport reference (passed via constructor) for box selection coordinate conversion
+  - TypeScript strict mode requires underscore prefix for unused params (_ctx, _e)
+  - isolatedModules requires 'export type' for type-only re-exports
 ---
