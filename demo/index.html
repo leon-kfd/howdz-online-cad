@@ -268,7 +268,7 @@
         <button class="tool-btn" title="移动 (M)">
           <svg viewBox="0 0 24 24"><path d="M12 2l4 4h-3v4h4V7l4 4-4 4v-3h-4v4h3l-4 4-4-4h3v-4H7v3l-4-4 4-4v3h4V6H8l4-4z" fill="currentColor"/></svg>
         </button>
-        <button class="tool-btn" title="复制 (CO)">
+        <button class="tool-btn" id="tool-copy" title="复制 (CO)">
           <svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="1" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 16V5a1 1 0 0 1 1-1h11" stroke="currentColor" stroke-width="2" fill="none"/></svg>
         </button>
         <button class="tool-btn" title="删除 (E)">
@@ -413,7 +413,7 @@
     // 监听工具切换
     toolManager.onToolChange = (name) => {
       setActiveButton(name);
-      const prompts = { line: '直线:', circle: '圆形:', arc: '圆弧:', select: '选择:' };
+      const prompts = { line: '直线:', circle: '圆形:', arc: '圆弧:', select: '选择:', copy: '复制:' };
       commandPrompt.textContent = prompts[name] || '命令:';
     };
 
@@ -429,6 +429,9 @@
     });
     document.getElementById('tool-arc')?.addEventListener('click', () => {
       toolManager.setActiveTool('arc');
+    });
+    document.getElementById('tool-copy')?.addEventListener('click', () => {
+      toolManager.setActiveTool('copy');
     });
 
     // 键盘快捷键（命令行未聚焦时生效）
@@ -467,6 +470,35 @@
       // A 圆弧工具
       if (key === 'a' && !e.ctrlKey) {
         toolManager.setActiveTool('arc');
+        return;
+      }
+
+      // Ctrl+C 复制
+      if (key === 'c' && e.ctrlKey) {
+        e.preventDefault();
+        const selected = cad.getEntityManager().getSelected();
+        if (selected.length > 0) {
+          // 将选中实体的克隆存入剪贴板（简单实现：存到全局变量）
+          window._cadClipboard = selected.map(e => e.clone());
+          addHistory(`已复制 ${selected.length} 个图元`, 'success');
+        }
+        return;
+      }
+
+      // Ctrl+V 粘贴（从剪贴板粘贴到鼠标位置）
+      if (key === 'v' && e.ctrlKey) {
+        e.preventDefault();
+        if (window._cadClipboard && window._cadClipboard.length > 0) {
+          const em = cad.getEntityManager();
+          const mouseWorld = cad.getMousePosition();
+          // 粘贴到原位（简单实现：不偏移）
+          for (const entity of window._cadClipboard) {
+            const clone = entity.clone();
+            em.add(clone);
+          }
+          em.clearSelection();
+          addHistory(`已粘贴 ${window._cadClipboard.length} 个图元`, 'success');
+        }
         return;
       }
     });

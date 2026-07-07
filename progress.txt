@@ -56,4 +56,20 @@
   - During grip drag, update the tracked grip point position so the overlay highlight follows the cursor
   - Property panel uses `entity.type === 'line'` etc. to branch — entity-specific methods (getLength, getArea etc.) are accessed directly in the demo script, not through a generic property interface
   - `onSelectionChange` callback pattern on SelectTool is the extension point for future UI integrations (layers panel, status bar, etc.)
+
+---
+
+## 2026-07-07 - US-006
+- Implemented CopyTool for copying selected entities
+- Files changed: `src/core/tools/CopyTool.ts` (new), `src/core/CAD.ts`, `src/core/tools/index.ts`, `src/index.ts`, `demo/index.html`, `tasks/prd.json`
+- CopyTool: click to set base point, click again to set target point and execute copy; supports multi-copy (keeps base point, continues until Escape/Enter)
+- Copy preview: shows base-point marker, dashed preview line, and semi-transparent entity preview during drag
+- Command: COPY / CO → switches to copy tool (no inline args yet — interactive base+target workflow)
+- Ctrl+C: clones selected entities to `window._cadClipboard`; Ctrl+V: pastes from clipboard
+- **Learnings for future iterations:**
+  - CopyTool takes `EntityManager` reference to read selected entities at activation time (snapshot)
+  - Multi-copy reuses same `sourceEntities` snapshot; new copies each time target is clicked
+  - Preview rendering clones entities with `entity.clone().move(dx, dy)` and draws at 40% opacity
+  - Ctrl+C/V uses a simple global clipboard (`window._cadClipboard`) — could be improved to a proper ClipboardManager later
+  - Move tool (US-007) will follow same pattern but call `entityManager.remove()` on originals after cloning
 ---

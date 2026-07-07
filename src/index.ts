@@ -10,5 +10,6 @@ export { SelectTool } from './core/tools/SelectTool';
 export { LineTool } from './core/tools/LineTool';
 export { CircleTool } from './core/tools/CircleTool';
 export { ArcTool } from './core/tools/ArcTool';
+export { CopyTool } from './core/tools/CopyTool';
 export type { Tool, ToolContext } from './core/tools/Tool';
 export type { CADOptions, Point, BoundingBox, ViewportState } from './core/types';

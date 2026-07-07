@@ -7,3 +7,5 @@ export { CircleTool } from './CircleTool';
 export type { CircleDrawMode, CircleEntityCreatedCallback } from './CircleTool';
 export { ArcTool } from './ArcTool';
 export type { ArcDrawMode, ArcEntityCreatedCallback } from './ArcTool';
+export { CopyTool } from './CopyTool';
+export type { CopyEntityCreatedCallback } from './CopyTool';

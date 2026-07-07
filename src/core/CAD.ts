@@ -8,6 +8,7 @@ import { SelectTool } from './tools/SelectTool';
 import { LineTool } from './tools/LineTool';
 import { CircleTool } from './tools/CircleTool';
 import { ArcTool } from './tools/ArcTool';
+import { CopyTool } from './tools/CopyTool';
 import { LineEntity, CircleEntity, ArcEntity } from './Entity';
 
 /**
@@ -157,6 +158,12 @@ export class HowdzCAD {
     });
     this.toolManager.register(arcTool);
 
+    // 注册复制工具
+    const copyTool = new CopyTool(this.entityManager, (entity) => {
+      this.entityManager.add(entity);
+    });
+    this.toolManager.register(copyTool);
+
     // 默认激活选择工具
     this.toolManager.setActiveTool('select');
 
@@ -298,6 +305,11 @@ export class HowdzCAD {
       case 'SELECT':
       case 'SEL': {
         this.toolManager.setActiveTool('select');
+        return true;
+      }
+      case 'COPY':
+      case 'CO': {
+        this.toolManager.setActiveTool('copy');
         return true;
       }
       default:
