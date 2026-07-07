@@ -120,3 +120,19 @@
   - `H` keyboard shortcut used for chamfer since `CHA` would require multi-key buffering (too invasive for demo)
   - Chamfer button in toolbar already had placeholder SVG — just needed `id` and click handler (same as fillet)
 ---
+
+## 2026-07-07 - US-010
+- Implemented ExtendTool for extending entities to a boundary
+- Files changed: `src/core/tools/ExtendTool.ts` (new), `src/core/CAD.ts`, `src/core/tools/index.ts`, `src/index.ts`, `demo/index.html`, `tasks/prd.json`
+- ExtendTool: click boundary first, then click entity to extend; supports line-to-line, line-to-arc/circle, arc-to-line, arc-to-arc/circle
+- Geometry: infinite line intersection for line-line; line-circle intersection for line-arc; circle-circle intersection for arc-arc
+- Nearest endpoint detection: auto-detects which end of the entity is closer to the boundary and extends that end
+- Command: EXTEND / EX → switches to extend tool
+- **Learnings for future iterations:**
+  - ExtendTool modifies entities in-place (no new entity created) — no `onEntityCreated` callback needed
+  - `lineCircleIntersections` helper is local to ExtendTool; could be extracted to shared geometry utility if more tools need it
+  - `circleCircleIntersections` is a private method on ExtendTool — same pattern as other geometry helpers
+  - Arc extension sets startAngle or endAngle depending on which endpoint is closer to boundary
+  - `isPointOnArc` check is needed to filter line-circle intersections that fall outside the arc range
+  - Extend button in toolbar already had placeholder SVG — just needed `id` and click handler
+---

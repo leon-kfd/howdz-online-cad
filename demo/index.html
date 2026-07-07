@@ -281,7 +281,7 @@
         <button class="tool-btn" id="tool-chamfer" title="倒角 (CHA)">
           <svg viewBox="0 0 24 24"><path d="M4 20L10 14h4l6-6" stroke="currentColor" stroke-width="2" fill="none"/></svg>
         </button>
-        <button class="tool-btn" title="延伸 (EX)">
+        <button class="tool-btn" id="tool-extend" title="延伸 (EX)">
           <svg viewBox="0 0 24 24"><path d="M4 20h16M8 4v12" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 12l4-4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
         </button>
       </div>
@@ -413,7 +413,7 @@
     // 监听工具切换
     toolManager.onToolChange = (name) => {
       setActiveButton(name);
-      const prompts = { line: '直线:', circle: '圆形:', arc: '圆弧:', select: '选择:', copy: '复制:', move: '移动:', fillet: '倒圆角:', chamfer: '倒角:' };
+      const prompts = { line: '直线:', circle: '圆形:', arc: '圆弧:', select: '选择:', copy: '复制:', move: '移动:', fillet: '倒圆角:', chamfer: '倒角:', extend: '延伸:' };
       commandPrompt.textContent = prompts[name] || '命令:';
     };
 
@@ -441,6 +441,9 @@
     });
     document.getElementById('tool-chamfer')?.addEventListener('click', () => {
       toolManager.setActiveTool('chamfer');
+    });
+    document.getElementById('tool-extend')?.addEventListener('click', () => {
+      toolManager.setActiveTool('extend');
     });
 
     // 键盘快捷键（命令行未聚焦时生效）

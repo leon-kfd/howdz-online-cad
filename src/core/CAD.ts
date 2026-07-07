@@ -12,6 +12,7 @@ import { CopyTool } from './tools/CopyTool';
 import { MoveTool } from './tools/MoveTool';
 import { FilletTool } from './tools/FilletTool';
 import { ChamferTool } from './tools/ChamferTool';
+import { ExtendTool } from './tools/ExtendTool';
 import { LineEntity, CircleEntity, ArcEntity } from './Entity';
 
 /**
@@ -182,6 +183,10 @@ export class HowdzCAD {
       this.entityManager.add(entity);
     });
     this.toolManager.register(chamferTool);
+
+    // 注册延伸工具
+    const extendTool = new ExtendTool(this.entityManager);
+    this.toolManager.register(extendTool);
 
     // 默认激活选择工具
     this.toolManager.setActiveTool('select');
@@ -365,6 +370,12 @@ export class HowdzCAD {
         }
         // 切换到倒角工具
         this.toolManager.setActiveTool('chamfer');
+        return true;
+      }
+      case 'EXTEND':
+      case 'EX': {
+        // 切换到延伸工具
+        this.toolManager.setActiveTool('extend');
         return true;
       }
       default:

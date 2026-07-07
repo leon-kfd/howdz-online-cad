@@ -14,3 +14,4 @@ export { FilletTool } from './FilletTool';
 export { computeLineLineFillet } from './FilletTool';
 export { ChamferTool } from './ChamferTool';
 export { computeLineLineChamfer } from './ChamferTool';
+export { ExtendTool } from './ExtendTool';
