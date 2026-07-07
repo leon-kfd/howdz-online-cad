@@ -15,6 +15,7 @@ import { ChamferTool } from './tools/ChamferTool';
 import { ExtendTool } from './tools/ExtendTool';
 import { LineEntity, CircleEntity, ArcEntity } from './Entity';
 import { DXFParser, DXFParseResult } from './DXFParser';
+import { DXFWriter } from './DXFWriter';
 
 /**
  * HowdzCAD 主类
@@ -412,6 +413,10 @@ export class HowdzCAD {
         // OPEN命令触发文件选择（由demo层处理）
         return true;
       }
+      case 'SAVE': {
+        // SAVE命令触发DXF导出（由demo层处理）
+        return true;
+      }
       default:
         return false;
     }
@@ -450,6 +455,14 @@ export class HowdzCAD {
     }
 
     return result;
+  }
+
+  /**
+   * 导出当前实体为DXF格式字符串
+   * @returns DXF文件内容
+   */
+  public saveDXF(): string {
+    return DXFWriter.export(this.entityManager.getAll());
   }
 
   /**

@@ -397,7 +397,7 @@
         case 'OPEN':
           return '正在打开DXF文件';
         case 'SAVE':
-          return '保存功能待实现';
+          return '已保存DXF文件';
         default:
           return '命令已执行';
       }
@@ -422,6 +422,14 @@
         const upperCmd = value.trim().toUpperCase();
         if (upperCmd === 'OPEN') {
           openDXFFile();
+          commandInput.value = '';
+          commandHistory.classList.add('visible');
+          return;
+        }
+
+        // 拦截SAVE命令，触发DXF导出
+        if (upperCmd === 'SAVE') {
+          saveDXFFile();
           commandInput.value = '';
           commandHistory.classList.add('visible');
           return;
@@ -625,7 +633,7 @@
         if (key === 's') {
           e.preventDefault();
           clearKeyBuffer();
-          addHistory('保存功能待实现 (DXF导出)', 'error');
+          saveDXFFile();
           return;
         }
 
@@ -787,6 +795,21 @@
       });
 
       input.click();
+    }
+
+    // ========== DXF保存 ==========
+    function saveDXFFile() {
+      const dxfContent = cad.saveDXF();
+      const blob = new Blob([dxfContent], { type: 'application/dxf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'drawing.dxf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      addHistory('已保存DXF文件', 'success');
     }
 
     // ========== 属性面板 ==========
