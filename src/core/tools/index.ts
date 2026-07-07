@@ -9,3 +9,4 @@ export { ArcTool } from './ArcTool';
 export type { ArcDrawMode, ArcEntityCreatedCallback } from './ArcTool';
 export { CopyTool } from './CopyTool';
 export type { CopyEntityCreatedCallback } from './CopyTool';
+export { MoveTool } from './MoveTool';

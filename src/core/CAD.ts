@@ -9,6 +9,7 @@ import { LineTool } from './tools/LineTool';
 import { CircleTool } from './tools/CircleTool';
 import { ArcTool } from './tools/ArcTool';
 import { CopyTool } from './tools/CopyTool';
+import { MoveTool } from './tools/MoveTool';
 import { LineEntity, CircleEntity, ArcEntity } from './Entity';
 
 /**
@@ -164,6 +165,10 @@ export class HowdzCAD {
     });
     this.toolManager.register(copyTool);
 
+    // 注册移动工具
+    const moveTool = new MoveTool(this.entityManager);
+    this.toolManager.register(moveTool);
+
     // 默认激活选择工具
     this.toolManager.setActiveTool('select');
 
@@ -310,6 +315,11 @@ export class HowdzCAD {
       case 'COPY':
       case 'CO': {
         this.toolManager.setActiveTool('copy');
+        return true;
+      }
+      case 'MOVE':
+      case 'M': {
+        this.toolManager.setActiveTool('move');
         return true;
       }
       default:
