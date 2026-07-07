@@ -46,3 +46,12 @@
 - `SelectTool.onSelectionChange` callback fires after any selection change (click, box select, shift toggle, clear)
 - Subscribe via `selectTool.onSelectionChange = () => { ... }` from external code
 - Entity-specific properties accessed via type guard: `entity.type === 'line'` then cast to access `getLength()`, `startX`, etc.
+
+## DXF File Operations
+- `DXFParser.parse(content)` returns `{ entities, layers, version }` — standalone static class, no side effects
+- `HowdzCAD.loadDXF(content)` calls DXFParser, clears existing entities, adds parsed ones, auto zoom-extents
+- DXF format: group code/value pairs on alternating lines; tokenize by splitting on newlines
+- ACI colors: 1=red, 2=yellow, 3=green, 4=cyan, 5=blue, 6=magenta, 7=white; negative means layer off
+- DXF ARC angles are in degrees; convert to radians for ArcEntity (which uses radians internally)
+- `loadDXF` currently replaces all entities; US-015 (export) will add the reverse: entities → DXF text
+- File picker integration lives in demo layer (not core) since core has no DOM file API access

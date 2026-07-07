@@ -12,6 +12,8 @@
 - Entity types: `'line' | 'circle' | 'arc'`
 - Build: `tsc && vite build` — typecheck first, then bundle
 - Run `npx tsc --noEmit` for quick typecheck without building
+- DXF operations: `DXFParser.parse(content)` → `{ entities, layers, version }`; `HowdzCAD.loadDXF(content)` adds parsed entities + auto zoom-extents
+- File I/O (open/save) lives in demo layer via hidden `<input type="file">` — core library has no DOM file API
 
 ---
 
@@ -176,4 +178,19 @@
   - `LineTool.tryParseTwoPoints()` handles coordinate pair parsing with relative support — reusable pattern for other tools
   - Command feedback messages are generated in the demo layer, not in the core library — keeps core API clean
   - CircleTool and ArcTool parseCommandLine already work with absolute coordinates; relative coord support can be added similarly if needed
+---
+
+## 2026-07-07 - US-014
+- Implemented DXF file import with parser and file picker integration
+- Files changed: `src/core/DXFParser.ts` (new), `src/core/CAD.ts`, `src/index.ts`, `demo/index.html`, `tasks/prd.json`
+- DXFParser: tokenizes group code/value pairs, extracts HEADER version, TABLES layers (with ACI colors), ENTITIES (LINE, CIRCLE, ARC)
+- CAD.ts: added `loadDXF(content)` public API that parses DXF, clears current entities, adds parsed entities, and auto zoom-extents
+- Demo: Ctrl+O triggers hidden file input for .dxf selection; OPEN command triggers same flow; FileReader reads as text
+- **Learnings for future iterations:**
+  - DXF format uses group code/value pairs on alternating lines; tokenize by splitting on newlines and pairing consecutive lines
+  - ACI color index maps to standard 7 colors (1-7); negative color values mean the layer is off
+  - DXF ARC angles are in degrees and use standard math convention (counterclockwise); convert to radians for ArcEntity
+  - `loadDXF` clears existing entities before importing — could be made configurable (append vs replace) if needed
+  - OPEN command is intercepted in demo layer (before `executeCommand`) to trigger file picker, since core library has no DOM file API
+  - US-015 (DXF export) will reuse the entity-type detection pattern from DXFParser for serialization
 ---
