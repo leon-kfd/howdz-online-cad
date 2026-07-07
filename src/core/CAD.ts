@@ -214,6 +214,7 @@ export class HowdzCAD {
     const fps = this.renderer.fps;
     const toolName = this.toolManager.getActiveToolName() || '无';
     const ortho = this.toolManager.orthoMode ? '正交' : '';
+    const snap = this.toolManager.snapMode ? '捕捉' : '';
     const entityCount = this.entityManager.getCount();
     const selectedCount = this.entityManager.getSelectedCount();
 
@@ -227,6 +228,10 @@ export class HowdzCAD {
 
     if (ortho) {
       statusHtml += `<span style="color: #0078d4">${ortho}</span>`;
+    }
+
+    if (snap) {
+      statusHtml += `<span style="color: #0078d4">${snap}</span>`;
     }
 
     statusHtml += `
@@ -464,6 +469,21 @@ export class HowdzCAD {
    */
   public canUndo(): boolean {
     return this.entityManager.canUndo();
+  }
+
+  /**
+   * 重做上一次撤销的操作
+   * @returns 被重新删除的实体数量
+   */
+  public redo(): number {
+    return this.entityManager.redo();
+  }
+
+  /**
+   * 是否有可重做的操作
+   */
+  public canRedo(): boolean {
+    return this.entityManager.canRedo();
   }
 
   /**

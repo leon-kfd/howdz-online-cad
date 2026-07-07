@@ -121,6 +121,20 @@
   - Chamfer button in toolbar already had placeholder SVG — just needed `id` and click handler (same as fillet)
 ---
 
+## 2026-07-07 - US-013
+- Implemented comprehensive keyboard shortcut system with multi-key buffer support
+- Files changed: `src/core/EntityManager.ts`, `src/core/CAD.ts`, `demo/index.html`, `tasks/prd.json`
+- EntityManager: added `redoStack`, `redo()` method (re-deletes restored entities), `canRedo()` method; `eraseSelected()` clears redo stack on new action; `undo()` pushes to redo stack
+- CAD.ts: exposed `redo()` and `canRedo()` as public API; added snap mode display in status bar
+- Demo: multi-key shortcut buffer (500ms timeout) for CO (copy), CHA (chamfer), EX (extend); single-key L/C/A/M/F/E preserved; Ctrl+Y redo handler; Ctrl+S/O placeholder handlers (show "待实现" message); F3 snap mode toggle; updated console help text
+- **Learnings for future iterations:**
+  - Multi-key shortcuts (CO, CHA, EX) use a key buffer with timeout — C waits 500ms before activating circle tool, allowing CO sequence to complete
+  - Ctrl+Y redo works on the delete-specific undo stack; US-016 (full undo/redo) will generalize this to all edit operations
+  - Ctrl+S/O are placeholder handlers — actual DXF save/open will be wired in US-014/US-015
+  - F3 snap mode toggle exists in ToolManager but snap functionality itself is not yet implemented (flag only)
+  - Browser Ctrl+S/O are intercepted with preventDefault to avoid native save/open dialogs conflicting with CAD commands
+---
+
 ## 2026-07-07 - US-010
 - Implemented ExtendTool for extending entities to a boundary
 - Files changed: `src/core/tools/ExtendTool.ts` (new), `src/core/CAD.ts`, `src/core/tools/index.ts`, `src/index.ts`, `demo/index.html`, `tasks/prd.json`

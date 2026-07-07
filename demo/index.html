@@ -306,7 +306,7 @@
     <!-- 底部命令行 -->
     <div class="command-line">
       <span class="command-prompt" id="command-prompt">命令:</span>
-      <input class="command-input" id="command-input" type="text" placeholder="输入命令 (LINE, L, CIRCLE, ARC)..." />
+      <input class="command-input" id="command-input" type="text" placeholder="输入命令 (LINE, CIRCLE, ARC, COPY, MOVE, FILLET, CHAMFER, EXTEND, ERASE)..." />
     </div>
     <div class="command-history" id="command-history"></div>
   </div>
@@ -513,6 +513,41 @@
       }
     });
 
+    // ========== 多键快捷键缓冲 ==========
+    let keyBuffer = '';
+    let keyBufferTimer = null;
+    const KEY_BUFFER_TIMEOUT = 500; // ms
+
+    function clearKeyBuffer() {
+      keyBuffer = '';
+      if (keyBufferTimer) {
+        clearTimeout(keyBufferTimer);
+        keyBufferTimer = null;
+      }
+    }
+
+    function processKeyBuffer() {
+      const seq = keyBuffer.toUpperCase();
+      clearKeyBuffer();
+
+      switch (seq) {
+        case 'CO':
+          toolManager.setActiveTool('copy');
+          addHistory('已切换到复制工具', 'success');
+          return true;
+        case 'CHA':
+          toolManager.setActiveTool('chamfer');
+          addHistory('已切换到倒角工具', 'success');
+          return true;
+        case 'EX':
+          toolManager.setActiveTool('extend');
+          addHistory('已切换到延伸工具', 'success');
+          return true;
+        default:
+          return false;
+      }
+    }
+
     // 键盘快捷键（命令行未聚焦时生效）
     document.addEventListener('keydown', (e) => {
       // 命令行聚焦时不处理快捷键
@@ -520,80 +555,105 @@
 
       const key = e.key.toLowerCase();
 
-      // F8 正交模式
+      // Ctrl 组合键优先处理（不进入多键缓冲）
+      if (e.ctrlKey) {
+        // Ctrl+C 复制
+        if (key === 'c') {
+          e.preventDefault();
+          clearKeyBuffer();
+          const selected = cad.getEntityManager().getSelected();
+          if (selected.length > 0) {
+            window._cadClipboard = selected.map(e => e.clone());
+            addHistory(`已复制 ${selected.length} 个图元`, 'success');
+          }
+          return;
+        }
+
+        // Ctrl+V 粘贴
+        if (key === 'v') {
+          e.preventDefault();
+          clearKeyBuffer();
+          if (window._cadClipboard && window._cadClipboard.length > 0) {
+            const em = cad.getEntityManager();
+            for (const entity of window._cadClipboard) {
+              em.add(entity.clone());
+            }
+            em.clearSelection();
+            addHistory(`已粘贴 ${window._cadClipboard.length} 个图元`, 'success');
+          }
+          return;
+        }
+
+        // Ctrl+Z 撤销
+        if (key === 'z') {
+          e.preventDefault();
+          clearKeyBuffer();
+          const count = cad.undo();
+          if (count > 0) {
+            updatePropertyPanel();
+            addHistory(`已撤销，恢复 ${count} 个图元`, 'success');
+          }
+          return;
+        }
+
+        // Ctrl+Y 重做
+        if (key === 'y') {
+          e.preventDefault();
+          clearKeyBuffer();
+          const count = cad.redo();
+          if (count > 0) {
+            updatePropertyPanel();
+            addHistory(`已重做，删除 ${count} 个图元`, 'success');
+          }
+          return;
+        }
+
+        // Ctrl+S 保存DXF
+        if (key === 's') {
+          e.preventDefault();
+          clearKeyBuffer();
+          addHistory('保存功能待实现 (DXF导出)', 'error');
+          return;
+        }
+
+        // Ctrl+O 打开DXF
+        if (key === 'o') {
+          e.preventDefault();
+          clearKeyBuffer();
+          addHistory('打开功能待实现 (DXF导入)', 'error');
+          return;
+        }
+
+        return; // 其他 Ctrl 组合键忽略
+      }
+
+      // 功能键处理
       if (e.key === 'F8') {
         e.preventDefault();
+        clearKeyBuffer();
         const ortho = toolManager.toggleOrtho();
         addHistory(`正交模式: ${ortho ? '开' : '关'}`, 'success');
         return;
       }
 
+      if (e.key === 'F3') {
+        e.preventDefault();
+        clearKeyBuffer();
+        const snap = toolManager.toggleSnap();
+        addHistory(`捕捉模式: ${snap ? '开' : '关'}`, 'success');
+        return;
+      }
+
       // Escape 回到选择工具
       if (e.key === 'Escape') {
+        clearKeyBuffer();
         toolManager.setActiveTool('select');
-        return;
-      }
-
-      // L 直线工具
-      if (key === 'l' && !e.ctrlKey) {
-        toolManager.setActiveTool('line');
-        return;
-      }
-
-      // C 圆形工具
-      if (key === 'c' && !e.ctrlKey) {
-        toolManager.setActiveTool('circle');
-        return;
-      }
-
-      // A 圆弧工具
-      if (key === 'a' && !e.ctrlKey) {
-        toolManager.setActiveTool('arc');
-        return;
-      }
-
-      // M 移动工具
-      if (key === 'm' && !e.ctrlKey) {
-        toolManager.setActiveTool('move');
-        return;
-      }
-
-      // F 倒圆角工具
-      if (key === 'f' && !e.ctrlKey) {
-        toolManager.setActiveTool('fillet');
-        return;
-      }
-
-      // H 倒角工具 (CHA command via command line)
-      if (key === 'h' && !e.ctrlKey) {
-        toolManager.setActiveTool('chamfer');
-        return;
-      }
-
-      // Ctrl+C 复制
-      if (key === 'c' && e.ctrlKey) {
-        e.preventDefault();
-        const selected = cad.getEntityManager().getSelected();
-        if (selected.length > 0) {
-          // 将选中实体的克隆存入剪贴板（简单实现：存到全局变量）
-          window._cadClipboard = selected.map(e => e.clone());
-          addHistory(`已复制 ${selected.length} 个图元`, 'success');
-        }
-        return;
-      }
-
-      // E 删除选中图元
-      if (key === 'e' && !e.ctrlKey) {
-        const count = cad.eraseSelected();
-        if (count > 0) {
-          updatePropertyPanel();
-          addHistory(`已删除 ${count} 个图元`, 'success');
-        }
         return;
       }
 
       // Delete 键删除选中图元
       if (e.key === 'Delete') {
+        clearKeyBuffer();
         const count = cad.eraseSelected();
         if (count > 0) {
           updatePropertyPanel();
@@ -602,31 +662,81 @@
         return;
       }
 
-      // Ctrl+Z 撤销删除
-      if (key === 'z' && e.ctrlKey) {
-        e.preventDefault();
-        const count = cad.undo();
-        if (count > 0) {
-          updatePropertyPanel();
-          addHistory(`已撤销，恢复 ${count} 个图元`, 'success');
+      // 单字母快捷键（直接映射）
+      const singleKeyMap = {
+        'l': 'line',
+        'c': 'circle',
+        'a': 'arc',
+        'm': 'move',
+        'f': 'fillet',
+        'e': null, // 特殊处理：E 直接删除
+      };
+
+      if (singleKeyMap.hasOwnProperty(key)) {
+        // E 键直接删除选中图元
+        if (key === 'e') {
+          clearKeyBuffer();
+          const count = cad.eraseSelected();
+          if (count > 0) {
+            updatePropertyPanel();
+            addHistory(`已删除 ${count} 个图元`, 'success');
+          }
+          return;
         }
+
+        // 检查是否是多键序列的起始字符
+        // C 可能是 CO 的开始，A 可能是 ARC 的开始（但 A 已经是圆弧）
+        // 只有 C 需要等待看是否后面跟着 O
+        if (key === 'c') {
+          keyBuffer += key;
+          if (keyBufferTimer) clearTimeout(keyBufferTimer);
+          keyBufferTimer = setTimeout(() => {
+            // 超时：当作单键 C 处理（圆形工具）
+            if (keyBuffer === 'c') {
+              toolManager.setActiveTool('circle');
+            }
+            clearKeyBuffer();
+          }, KEY_BUFFER_TIMEOUT);
+          return;
+        }
+
+        // 其他单键直接激活工具
+        clearKeyBuffer();
+        toolManager.setActiveTool(singleKeyMap[key]);
         return;
       }
 
-      // Ctrl+V 粘贴（从剪贴板粘贴到鼠标位置）
-      if (key === 'v' && e.ctrlKey) {
-        e.preventDefault();
-        if (window._cadClipboard && window._cadClipboard.length > 0) {
-          const em = cad.getEntityManager();
-          const mouseWorld = cad.getMousePosition();
-          // 粘贴到原位（简单实现：不偏移）
-          for (const entity of window._cadClipboard) {
-            const clone = entity.clone();
-            em.add(clone);
-          }
-          em.clearSelection();
-          addHistory(`已粘贴 ${window._cadClipboard.length} 个图元`, 'success');
+      // 多键序列字符（O, H, X 等）
+      if (key === 'o' || key === 'h' || key === 'x') {
+        keyBuffer += key;
+
+        if (keyBufferTimer) clearTimeout(keyBufferTimer);
+
+        // 尝试匹配完整序列
+        const upper = keyBuffer.toUpperCase();
+        if (upper === 'CO' || upper === 'CHA' || upper === 'EX') {
+          processKeyBuffer();
+          return;
         }
+
+        // 检查是否有匹配的前缀
+        const hasPrefix = ['CO', 'CHA', 'EX'].some(seq => seq.startsWith(upper));
+        if (hasPrefix) {
+          // 继续等待
+          keyBufferTimer = setTimeout(() => {
+            // 超时：尝试处理缓冲区
+            if (!processKeyBuffer()) {
+              // 无法匹配，回退到第一个字符的单键映射
+              const firstChar = keyBuffer[0].toLowerCase();
+              if (firstChar === 'c') toolManager.setActiveTool('circle');
+            }
+            clearKeyBuffer();
+          }, KEY_BUFFER_TIMEOUT);
+          return;
+        }
+
+        // 无匹配前缀，清空缓冲并忽略
+        clearKeyBuffer();
         return;
       }
     });
@@ -723,10 +833,15 @@
     console.log('操作说明:');
     console.log('  - 鼠标滚轮: 缩放');
     console.log('  - 鼠标中键拖拽: 平移');
-    console.log('  - L键: 切换到直线工具');
-    console.log('  - F8: 切换正交模式');
-    console.log('  - 命令行: LINE x1,y1 x2,y2 绘制直线');
-    console.log('  - 状态栏显示实时坐标和缩放比例');
+    console.log('快捷键:');
+    console.log('  - L: 直线 | C: 圆形 | A: 圆弧');
+    console.log('  - M: 移动 | CO: 复制 | E/Delete: 删除');
+    console.log('  - F: 倒圆角 | CHA: 倒角 | EX: 延伸');
+    console.log('  - Esc: 选择工具');
+    console.log('  - F3: 捕捉模式 | F8: 正交模式');
+    console.log('  - Ctrl+Z: 撤销 | Ctrl+Y: 重做');
+    console.log('  - Ctrl+C: 复制到剪贴板 | Ctrl+V: 粘贴');
+    console.log('  - Ctrl+S: 保存DXF | Ctrl+O: 打开DXF');
     console.log('  - 拖拽夹点可实时修改图形形状');
   </script>
 </body>

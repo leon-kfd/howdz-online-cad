@@ -29,6 +29,8 @@ export class EntityManager {
   private selectedSet: Set<string> = new Set();
   /** 撤销栈（仅用于删除操作） */
   private undoStack: UndoEntry[] = [];
+  /** 重做栈 */
+  private redoStack: UndoEntry[] = [];
 
   /** 实体变更回调 */
   public onChange: (() => void) | null = null;
@@ -272,8 +274,9 @@ export class EntityManager {
     }
     this.selectedSet.clear();
 
-    // 压入撤销栈
+    // 压入撤销栈，清空重做栈（新操作使重做历史失效）
     this.undoStack.push({ entities: selected, index: firstIndex });
+    this.redoStack = [];
     this.onChange?.();
     return selected.length;
   }
@@ -286,9 +289,14 @@ export class EntityManager {
     const entry = this.undoStack.pop();
     if (!entry) return 0;
 
-    // 在原位置插入恢复的实体（钳制到有效范围）
+    // 记录恢复实体的当前位置（用于重做时精确移除）
     const insertAt = Math.min(entry.index, this.entities.length);
+
+    // 在原位置插入恢复的实体
     this.entities.splice(insertAt, 0, ...entry.entities);
+
+    // 压入重做栈
+    this.redoStack.push({ entities: entry.entities, index: insertAt });
     this.onChange?.();
     return entry.entities.length;
   }
@@ -298,5 +306,34 @@ export class EntityManager {
    */
   public canUndo(): boolean {
     return this.undoStack.length > 0;
+  }
+
+  /**
+   * 重做上一次撤销的操作（重新删除已恢复的实体）
+   * @returns 被重新删除的实体数量
+   */
+  public redo(): number {
+    const entry = this.redoStack.pop();
+    if (!entry) return 0;
+
+    // 重新删除这些实体
+    for (const entity of entry.entities) {
+      const idx = this.entities.indexOf(entity);
+      if (idx !== -1) {
+        this.entities.splice(idx, 1);
+      }
+    }
+
+    // 压回撤销栈
+    this.undoStack.push(entry);
+    this.onChange?.();
+    return entry.entities.length;
+  }
+
+  /**
+   * 是否有可重做的操作
+   */
+  public canRedo(): boolean {
+    return this.redoStack.length > 0;
   }
 }
