@@ -205,3 +205,122 @@ export class LineEntity extends Entity {
     return Math.atan2(this.endY - this.startY, this.endX - this.startX);
   }
 }
+
+/**
+ * 圆形实体
+ */
+export class CircleEntity extends Entity {
+  public centerX: number;
+  public centerY: number;
+  public radius: number;
+
+  constructor(centerX: number, centerY: number, radius: number, id?: string) {
+    super('circle', id);
+    this.centerX = centerX;
+    this.centerY = centerY;
+    this.radius = radius;
+  }
+
+  public getBoundingBox(): BoundingBox {
+    return {
+      minX: this.centerX - this.radius,
+      minY: this.centerY - this.radius,
+      maxX: this.centerX + this.radius,
+      maxY: this.centerY + this.radius,
+    };
+  }
+
+  public getGripPoints(): Point[] {
+    return [
+      { x: this.centerX, y: this.centerY },                           // 圆心
+      { x: this.centerX + this.radius, y: this.centerY },             // 右象限点
+      { x: this.centerX, y: this.centerY - this.radius },             // 上象限点
+      { x: this.centerX - this.radius, y: this.centerY },             // 左象限点
+      { x: this.centerX, y: this.centerY + this.radius },             // 下象限点
+    ];
+  }
+
+  public draw(ctx: CanvasRenderingContext2D, viewport: Viewport, selected: boolean): void {
+    const center = viewport.worldToScreen(this.centerX, this.centerY);
+    const screenRadius = this.radius * viewport.scale;
+
+    ctx.strokeStyle = this.color || '#e0e0e0';
+    ctx.lineWidth = selected ? 2 : 1;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, Math.abs(screenRadius), 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 选中时绘制夹点
+    if (selected) {
+      this.drawGripPoints(ctx, viewport);
+    }
+  }
+
+  private drawGripPoints(ctx: CanvasRenderingContext2D, viewport: Viewport): void {
+    const grips = this.getGripPoints();
+    ctx.fillStyle = '#0078d4';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+
+    for (const grip of grips) {
+      const sp = viewport.worldToScreen(grip.x, grip.y);
+      ctx.beginPath();
+      ctx.rect(sp.x - 4, sp.y - 4, 8, 8);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+
+  public hitTest(worldX: number, worldY: number, tolerance: number): boolean {
+    const dist = Math.hypot(worldX - this.centerX, worldY - this.centerY);
+    return Math.abs(dist - this.radius) <= tolerance;
+  }
+
+  public move(dx: number, dy: number): void {
+    this.centerX += dx;
+    this.centerY += dy;
+  }
+
+  public moveGripPoint(gripIndex: number, newX: number, newY: number): void {
+    switch (gripIndex) {
+      case 0: // 圆心 - 整体移动
+        {
+          const dx = newX - this.centerX;
+          const dy = newY - this.centerY;
+          this.move(dx, dy);
+        }
+        break;
+      case 1: // 右象限点 - 调整半径
+        this.radius = Math.hypot(newX - this.centerX, newY - this.centerY);
+        break;
+      case 2: // 上象限点
+        this.radius = Math.hypot(newX - this.centerX, newY - this.centerY);
+        break;
+      case 3: // 左象限点
+        this.radius = Math.hypot(newX - this.centerX, newY - this.centerY);
+        break;
+      case 4: // 下象限点
+        this.radius = Math.hypot(newX - this.centerX, newY - this.centerY);
+        break;
+    }
+  }
+
+  public clone(): CircleEntity {
+    const copy = new CircleEntity(this.centerX, this.centerY, this.radius);
+    copy.layer = this.layer;
+    copy.color = this.color;
+    copy.visible = this.visible;
+    copy.locked = this.locked;
+    return copy;
+  }
+
+  /** 获取圆的周长 */
+  public getCircumference(): number {
+    return 2 * Math.PI * this.radius;
+  }
+
+  /** 获取圆的面积 */
+  public getArea(): number {
+    return Math.PI * this.radius * this.radius;
+  }
+}

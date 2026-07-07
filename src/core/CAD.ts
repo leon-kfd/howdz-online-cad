@@ -6,7 +6,8 @@ import { EntityManager } from './EntityManager';
 import { ToolManager } from './tools/ToolManager';
 import { SelectTool } from './tools/SelectTool';
 import { LineTool } from './tools/LineTool';
-import { LineEntity } from './Entity';
+import { CircleTool } from './tools/CircleTool';
+import { LineEntity, CircleEntity } from './Entity';
 
 /**
  * HowdzCAD 主类
@@ -143,6 +144,12 @@ export class HowdzCAD {
     });
     this.toolManager.register(lineTool);
 
+    // 注册圆形工具
+    const circleTool = new CircleTool((entity: CircleEntity) => {
+      this.entityManager.add(entity);
+    });
+    this.toolManager.register(circleTool);
+
     // 默认激活选择工具
     this.toolManager.setActiveTool('select');
 
@@ -256,6 +263,18 @@ export class HowdzCAD {
         }
         // 如果没有参数，切换到直线工具
         this.toolManager.setActiveTool('line');
+        return true;
+      }
+      case 'CIRCLE':
+      case 'C': {
+        const result = CircleTool.parseCommandLine(args);
+        if (result) {
+          const circle = new CircleEntity(result.center.x, result.center.y, result.radius);
+          this.entityManager.add(circle);
+          return true;
+        }
+        // 如果没有参数，切换到圆形工具
+        this.toolManager.setActiveTool('circle');
         return true;
       }
       case 'SELECT':

@@ -337,7 +337,8 @@
     // 监听工具切换
     toolManager.onToolChange = (name) => {
       setActiveButton(name);
-      commandPrompt.textContent = name === 'line' ? '直线:' : name === 'select' ? '选择:' : '命令:';
+      const prompts = { line: '直线:', circle: '圆形:', select: '选择:' };
+      commandPrompt.textContent = prompts[name] || '命令:';
     };
 
     // 工具栏按钮点击
@@ -346,6 +347,9 @@
     });
     document.getElementById('tool-line')?.addEventListener('click', () => {
       toolManager.setActiveTool('line');
+    });
+    document.getElementById('tool-circle')?.addEventListener('click', () => {
+      toolManager.setActiveTool('circle');
     });
 
     // 键盘快捷键（命令行未聚焦时生效）
@@ -372,6 +376,12 @@
       // L 直线工具
       if (key === 'l' && !e.ctrlKey) {
         toolManager.setActiveTool('line');
+        return;
+      }
+
+      // C 圆形工具
+      if (key === 'c' && !e.ctrlKey) {
+        toolManager.setActiveTool('circle');
         return;
       }
     });
