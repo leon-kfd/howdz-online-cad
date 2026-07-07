@@ -2,6 +2,11 @@ import { Viewport } from './Viewport';
 import { Renderer } from './Renderer';
 import { CADOptions, Point } from './types';
 import { formatCoord } from '../utils/math';
+import { EntityManager } from './EntityManager';
+import { ToolManager } from './tools/ToolManager';
+import { SelectTool } from './tools/SelectTool';
+import { LineTool } from './tools/LineTool';
+import { LineEntity } from './Entity';
 
 /**
  * HowdzCAD 主类
@@ -13,6 +18,9 @@ export class HowdzCAD {
   private viewport: Viewport;
   private renderer: Renderer;
   private statusBar: HTMLElement | null = null;
+
+  private entityManager: EntityManager;
+  private toolManager: ToolManager;
 
   private options: Required<CADOptions>;
 
@@ -46,6 +54,9 @@ export class HowdzCAD {
     // 初始化视口
     this.viewport = new Viewport(this.canvas);
 
+    // 初始化实体管理器
+    this.entityManager = new EntityManager();
+
     // 初始化渲染器
     this.renderer = new Renderer(this.canvas, this.viewport, {
       showGrid: this.options.showGrid,
@@ -53,7 +64,12 @@ export class HowdzCAD {
       backgroundColor: this.options.backgroundColor,
       gridColor: this.options.gridColor,
       gridMajorColor: this.options.gridMajorColor,
+      entityManager: this.entityManager,
     });
+
+    // 初始化工具管理器
+    this.toolManager = new ToolManager();
+    this.setupTools();
 
     // 视口变化时更新状态栏
     this.viewport.onUpdate = () => this.updateStatusBar();
@@ -114,6 +130,29 @@ export class HowdzCAD {
   }
 
   /**
+   * 设置工具
+   */
+  private setupTools(): void {
+    // 注册选择工具
+    const selectTool = new SelectTool(this.entityManager, this.viewport);
+    this.toolManager.register(selectTool);
+
+    // 注册直线工具
+    const lineTool = new LineTool((entity: LineEntity) => {
+      this.entityManager.add(entity);
+    });
+    this.toolManager.register(lineTool);
+
+    // 默认激活选择工具
+    this.toolManager.setActiveTool('select');
+
+    // 将工具管理器的叠加层绘制传递给渲染器
+    this.renderer.setOverlayRenderer((ctx) => {
+      this.toolManager.drawOverlay(ctx, this.viewport);
+    });
+  }
+
+  /**
    * 处理窗口尺寸变化
    */
   private handleResize = (): void => {
@@ -128,13 +167,32 @@ export class HowdzCAD {
 
     const { mouseWorld, scale } = this.viewport;
     const fps = this.renderer.fps;
+    const toolName = this.toolManager.getActiveToolName() || '无';
+    const ortho = this.toolManager.orthoMode ? '正交' : '';
+    const entityCount = this.entityManager.getCount();
+    const selectedCount = this.entityManager.getSelectedCount();
 
-    this.statusBar.innerHTML = `
+    let statusHtml = `
       <span>X: ${formatCoord(mouseWorld.x)}</span>
       <span>Y: ${formatCoord(mouseWorld.y)}</span>
       <span>缩放: ${(scale * 100).toFixed(0)}%</span>
       <span>FPS: ${fps}</span>
+      <span>工具: ${toolName}</span>
     `;
+
+    if (ortho) {
+      statusHtml += `<span style="color: #0078d4">${ortho}</span>`;
+    }
+
+    statusHtml += `
+      <span>图元: ${entityCount}</span>
+    `;
+
+    if (selectedCount > 0) {
+      statusHtml += `<span style="color: #0078d4">选中: ${selectedCount}</span>`;
+    }
+
+    this.statusBar.innerHTML = statusHtml;
   }
 
   // ========== 公开API ==========
@@ -158,6 +216,56 @@ export class HowdzCAD {
    */
   public getCanvas(): HTMLCanvasElement {
     return this.canvas;
+  }
+
+  /**
+   * 获取实体管理器
+   */
+  public getEntityManager(): EntityManager {
+    return this.entityManager;
+  }
+
+  /**
+   * 获取工具管理器
+   */
+  public getToolManager(): ToolManager {
+    return this.toolManager;
+  }
+
+  /**
+   * 执行命令（命令行接口）
+   * 支持: LINE x1,y1 x2,y2
+   */
+  public executeCommand(commandLine: string): boolean {
+    const trimmed = commandLine.trim();
+    if (!trimmed) return false;
+
+    // 分离命令和参数
+    const spaceIndex = trimmed.indexOf(' ');
+    const cmd = (spaceIndex === -1 ? trimmed : trimmed.substring(0, spaceIndex)).toUpperCase();
+    const args = spaceIndex === -1 ? '' : trimmed.substring(spaceIndex + 1).trim();
+
+    switch (cmd) {
+      case 'LINE':
+      case 'L': {
+        const result = LineTool.parseCommandLine(args);
+        if (result) {
+          const line = new LineEntity(result.start.x, result.start.y, result.end.x, result.end.y);
+          this.entityManager.add(line);
+          return true;
+        }
+        // 如果没有参数，切换到直线工具
+        this.toolManager.setActiveTool('line');
+        return true;
+      }
+      case 'SELECT':
+      case 'SEL': {
+        this.toolManager.setActiveTool('select');
+        return true;
+      }
+      default:
+        return false;
+    }
   }
 
   /**

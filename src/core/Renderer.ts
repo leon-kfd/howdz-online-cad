@@ -1,4 +1,5 @@
 import { Viewport } from './Viewport';
+import { EntityManager } from './EntityManager';
 import { calculateGridSpacing } from '../utils/math';
 
 /** 默认颜色配置 */
@@ -20,10 +21,14 @@ export class Renderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private viewport: Viewport;
+  private entityManager: EntityManager | null = null;
   private colors: typeof DEFAULT_COLORS;
 
   private showGrid: boolean;
   private showAxes: boolean;
+
+  /** 叠加层渲染回调（用于工具的临时图形） */
+  private overlayRenderer: ((ctx: CanvasRenderingContext2D) => void) | null = null;
 
   /** 动画帧ID */
   private rafId = 0;
@@ -41,10 +46,12 @@ export class Renderer {
       backgroundColor?: string;
       gridColor?: string;
       gridMajorColor?: string;
+      entityManager?: EntityManager;
     } = {}
   ) {
     this.canvas = canvas;
     this.viewport = viewport;
+    this.entityManager = options.entityManager ?? null;
     this.showGrid = options.showGrid ?? true;
     this.showAxes = options.showAxes ?? true;
 
@@ -61,6 +68,13 @@ export class Renderer {
 
     // 设置十字光标
     this.canvas.style.cursor = 'crosshair';
+  }
+
+  /**
+   * 设置叠加层渲染回调
+   */
+  public setOverlayRenderer(renderer: (ctx: CanvasRenderingContext2D) => void): void {
+    this.overlayRenderer = renderer;
   }
 
   /**
@@ -120,8 +134,16 @@ export class Renderer {
       this.drawAxes(width, height);
     }
 
+    // 绘制实体
+    this.drawEntities();
+
     // 绘制十字光标
     this.drawCrosshair(width, height);
+
+    // 绘制叠加层（工具临时图形）
+    if (this.overlayRenderer) {
+      this.overlayRenderer(this.ctx);
+    }
 
     // 帧率统计
     this.frameCount++;
@@ -135,6 +157,20 @@ export class Renderer {
     // 继续下一帧
     this.rafId = requestAnimationFrame(this.render);
   };
+
+  /**
+   * 绘制所有实体
+   */
+  private drawEntities(): void {
+    if (!this.entityManager) return;
+
+    const entities = this.entityManager.getAll();
+    for (const entity of entities) {
+      if (!entity.visible) continue;
+      const selected = this.entityManager.isSelected(entity);
+      entity.draw(this.ctx, this.viewport, selected);
+    }
+  }
 
   /**
    * 绘制自适应网格

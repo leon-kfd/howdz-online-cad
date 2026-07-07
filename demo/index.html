@@ -127,6 +127,35 @@
       outline: none;
     }
 
+    /* 命令历史 */
+    .command-history {
+      position: absolute;
+      bottom: 28px;
+      left: 0;
+      right: 0;
+      max-height: 200px;
+      overflow-y: auto;
+      background: #1e1e1e;
+      border-top: 1px solid #3a3a3a;
+      padding: 4px 10px;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      color: #888;
+      display: none;
+    }
+    .command-history.visible {
+      display: block;
+    }
+    .command-history .history-line {
+      padding: 1px 0;
+    }
+    .command-history .history-line.error {
+      color: #e06060;
+    }
+    .command-history .history-line.success {
+      color: #60c060;
+    }
+
     /* 提示浮层 */
     .hint {
       position: absolute;
@@ -157,17 +186,17 @@
     <div class="main">
       <!-- 左侧工具栏 -->
       <div class="toolbar">
-        <button class="tool-btn active" title="选择 (Esc)">
+        <button class="tool-btn active" id="tool-select" title="选择 (Esc)">
           <svg viewBox="0 0 24 24"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
         </button>
         <div class="tool-divider"></div>
-        <button class="tool-btn" title="直线 (L)">
+        <button class="tool-btn" id="tool-line" title="直线 (L)">
           <svg viewBox="0 0 24 24"><line x1="5" y1="19" x2="19" y2="5" stroke="currentColor" stroke-width="2" fill="none"/></svg>
         </button>
-        <button class="tool-btn" title="圆形 (C)">
+        <button class="tool-btn" id="tool-circle" title="圆形 (C)">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2" fill="none"/></svg>
         </button>
-        <button class="tool-btn" title="圆弧 (A)">
+        <button class="tool-btn" id="tool-arc" title="圆弧 (A)">
           <svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 0 1 0 16" stroke="currentColor" stroke-width="2" fill="none"/></svg>
         </button>
         <div class="tool-divider"></div>
@@ -200,9 +229,10 @@
 
     <!-- 底部命令行 -->
     <div class="command-line">
-      <span class="command-prompt">命令:</span>
-      <input class="command-input" type="text" placeholder="输入命令..." />
+      <span class="command-prompt" id="command-prompt">命令:</span>
+      <input class="command-input" id="command-input" type="text" placeholder="输入命令 (LINE, L, CIRCLE, ARC)..." />
     </div>
+    <div class="command-history" id="command-history"></div>
   </div>
 
   <script type="module">
@@ -217,10 +247,145 @@
     // 暴露到全局供调试
     window.cad = cad;
 
+    // 命令行交互
+    const commandInput = document.getElementById('command-input');
+    const commandHistory = document.getElementById('command-history');
+    const commandPrompt = document.getElementById('command-prompt');
+    const historyLines = [];
+
+    function addHistory(text, type = '') {
+      const line = document.createElement('div');
+      line.className = 'history-line' + (type ? ' ' + type : '');
+      line.textContent = text;
+      commandHistory.appendChild(line);
+      commandHistory.scrollTop = commandHistory.scrollHeight;
+      historyLines.push({ text, type });
+    }
+
+    // 命令历史记录
+    let commandHistoryList = [];
+    let historyIndex = -1;
+
+    commandInput.addEventListener('keydown', (e) => {
+      // 阻止事件传播到CAD的键盘处理
+      e.stopPropagation();
+
+      if (e.key === 'Enter') {
+        const value = commandInput.value.trim();
+        if (!value) return;
+
+        // 添加到历史
+        commandHistoryList.push(value);
+        historyIndex = commandHistoryList.length;
+
+        // 显示输入
+        addHistory(`> ${value}`);
+
+        // 执行命令
+        const result = cad.executeCommand(value);
+        if (result) {
+          addHistory('命令已执行', 'success');
+        } else {
+          addHistory('未知命令: ' + value, 'error');
+        }
+
+        commandInput.value = '';
+        commandHistory.classList.add('visible');
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (historyIndex > 0) {
+          historyIndex--;
+          commandInput.value = commandHistoryList[historyIndex];
+        }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (historyIndex < commandHistoryList.length - 1) {
+          historyIndex++;
+          commandInput.value = commandHistoryList[historyIndex];
+        } else {
+          historyIndex = commandHistoryList.length;
+          commandInput.value = '';
+        }
+      } else if (e.key === 'Escape') {
+        commandInput.blur();
+        commandHistory.classList.remove('visible');
+      }
+    });
+
+    // 聚焦命令行时显示历史
+    commandInput.addEventListener('focus', () => {
+      if (historyLines.length > 0) {
+        commandHistory.classList.add('visible');
+      }
+    });
+
+    // 点击画布时隐藏历史并聚焦画布
+    document.getElementById('cad-container').addEventListener('mousedown', () => {
+      commandHistory.classList.remove('visible');
+    });
+
+    // 工具栏按钮交互
+    const toolBtns = document.querySelectorAll('.tool-btn');
+    const toolManager = cad.getToolManager();
+
+    function setActiveButton(toolName) {
+      toolBtns.forEach(btn => btn.classList.remove('active'));
+      const btn = document.getElementById('tool-' + toolName);
+      if (btn) btn.classList.add('active');
+    }
+
+    // 监听工具切换
+    toolManager.onToolChange = (name) => {
+      setActiveButton(name);
+      commandPrompt.textContent = name === 'line' ? '直线:' : name === 'select' ? '选择:' : '命令:';
+    };
+
+    // 工具栏按钮点击
+    document.getElementById('tool-select')?.addEventListener('click', () => {
+      toolManager.setActiveTool('select');
+    });
+    document.getElementById('tool-line')?.addEventListener('click', () => {
+      toolManager.setActiveTool('line');
+    });
+
+    // 键盘快捷键（命令行未聚焦时生效）
+    document.addEventListener('keydown', (e) => {
+      // 命令行聚焦时不处理快捷键
+      if (document.activeElement === commandInput) return;
+
+      const key = e.key.toLowerCase();
+
+      // F8 正交模式
+      if (e.key === 'F8') {
+        e.preventDefault();
+        const ortho = toolManager.toggleOrtho();
+        addHistory(`正交模式: ${ortho ? '开' : '关'}`, 'success');
+        return;
+      }
+
+      // Escape 回到选择工具
+      if (e.key === 'Escape') {
+        toolManager.setActiveTool('select');
+        return;
+      }
+
+      // L 直线工具
+      if (key === 'l' && !e.ctrlKey) {
+        toolManager.setActiveTool('line');
+        return;
+      }
+    });
+
+    // 将viewport引用存储到canvas上（供SelectTool使用）
+    // 注：SelectTool现在通过构造函数接收viewport，此步骤不再需要
+
     console.log('HowdzCAD 初始化完成');
     console.log('操作说明:');
     console.log('  - 鼠标滚轮: 缩放');
     console.log('  - 鼠标中键拖拽: 平移');
+    console.log('  - L键: 切换到直线工具');
+    console.log('  - F8: 切换正交模式');
+    console.log('  - 命令行: LINE x1,y1 x2,y2 绘制直线');
     console.log('  - 状态栏显示实时坐标和缩放比例');
   </script>
 </body>
