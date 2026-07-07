@@ -34,3 +34,15 @@
 - `EntityManager` manages selection state via `selectedSet`
 - Supports single select, toggle (Shift+click), box select, cross select
 - Selected entities rendered with `selected: true` flag in `draw()`
+
+## Grip Point Editing
+- `EntityManager.hitTestGripPoint()` finds nearest grip on selected entities only (avoids conflicts with click selection)
+- Grip hit-testing uses 5px tolerance converted to world coordinates
+- `SelectTool` checks grip hit first, then entity hit, then starts box selection
+- During grip drag, `entity.moveGripPoint(gripIndex, x, y)` is called in real-time on mouseMove
+- `GripHitResult` interface: `{ entity, gripIndex, point }`
+
+## Property Panel Integration
+- `SelectTool.onSelectionChange` callback fires after any selection change (click, box select, shift toggle, clear)
+- Subscribe via `selectTool.onSelectionChange = () => { ... }` from external code
+- Entity-specific properties accessed via type guard: `entity.type === 'line'` then cast to access `getLength()`, `startX`, etc.

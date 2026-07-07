@@ -2,6 +2,7 @@ export { HowdzCAD } from './core/CAD';
 export { Viewport } from './core/Viewport';
 export { Renderer } from './core/Renderer';
 export { EntityManager } from './core/EntityManager';
+export type { GripHitResult } from './core/EntityManager';
 export { Entity, LineEntity, CircleEntity, ArcEntity } from './core/Entity';
 export type { EntityType, EntityData, GripPoint } from './core/Entity';
 export { ToolManager } from './core/tools/ToolManager';

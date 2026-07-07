@@ -102,6 +102,71 @@
       height: 100%;
     }
 
+    /* 右侧属性面板 */
+    .properties-panel {
+      width: 220px;
+      background: #252525;
+      border-left: 1px solid #3a3a3a;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      font-size: 12px;
+      color: #ccc;
+    }
+    .properties-panel.hidden {
+      display: none;
+    }
+    .panel-header {
+      padding: 8px 12px;
+      background: #2d2d2d;
+      border-bottom: 1px solid #3a3a3a;
+      font-size: 13px;
+      font-weight: bold;
+      color: #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-header .close-btn {
+      cursor: pointer;
+      color: #888;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .panel-header .close-btn:hover {
+      color: #fff;
+    }
+    .panel-section {
+      padding: 8px 12px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .panel-section-title {
+      font-size: 11px;
+      color: #888;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+    .prop-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+      line-height: 1.6;
+    }
+    .prop-label {
+      color: #999;
+    }
+    .prop-value {
+      color: #ddd;
+      font-family: 'Consolas', monospace;
+    }
+    .panel-empty {
+      padding: 20px 12px;
+      text-align: center;
+      color: #555;
+      font-size: 12px;
+    }
+
     /* 底部命令行 */
     .command-line {
       height: 28px;
@@ -224,6 +289,17 @@
       <!-- 绘图区域 -->
       <div class="canvas-area">
         <div id="cad-container"></div>
+      </div>
+
+      <!-- 右侧属性面板 -->
+      <div class="properties-panel" id="properties-panel">
+        <div class="panel-header">
+          <span>属性</span>
+          <span class="close-btn" id="panel-close" title="关闭面板">×</span>
+        </div>
+        <div id="panel-content">
+          <div class="panel-empty">未选中图元</div>
+        </div>
       </div>
     </div>
 
@@ -395,8 +471,93 @@
       }
     });
 
-    // 将viewport引用存储到canvas上（供SelectTool使用）
-    // 注：SelectTool现在通过构造函数接收viewport，此步骤不再需要
+    // ========== 属性面板 ==========
+    const panelContent = document.getElementById('panel-content');
+    const propertiesPanel = document.getElementById('properties-panel');
+
+    function formatNum(n) {
+      return n.toFixed(2);
+    }
+
+    function formatAngle(rad) {
+      return (rad * 180 / Math.PI).toFixed(1) + '°';
+    }
+
+    function updatePropertyPanel() {
+      const selected = cad.getEntityManager().getSelected();
+
+      if (selected.length === 0) {
+        panelContent.innerHTML = '<div class="panel-empty">未选中图元</div>';
+        return;
+      }
+
+      if (selected.length > 1) {
+        panelContent.innerHTML = `<div class="panel-section">
+          <div class="panel-section-title">选择集</div>
+          <div class="prop-row"><span class="prop-label">数量</span><span class="prop-value">${selected.length}</span></div>
+        </div>`;
+        return;
+      }
+
+      const entity = selected[0];
+      let html = '';
+
+      // 通用属性
+      html += `<div class="panel-section">
+        <div class="panel-section-title">基本信息</div>
+        <div class="prop-row"><span class="prop-label">类型</span><span class="prop-value">${entity.type === 'line' ? '直线' : entity.type === 'circle' ? '圆形' : '圆弧'}</span></div>
+        <div class="prop-row"><span class="prop-label">图层</span><span class="prop-value">${entity.layer}</span></div>
+        <div class="prop-row"><span class="prop-label">ID</span><span class="prop-value" style="font-size:10px">${entity.id}</span></div>
+      </div>`;
+
+      // 类型特有属性
+      if (entity.type === 'line') {
+        html += `<div class="panel-section">
+          <div class="panel-section-title">直线参数</div>
+          <div class="prop-row"><span class="prop-label">起点 X</span><span class="prop-value">${formatNum(entity.startX)}</span></div>
+          <div class="prop-row"><span class="prop-label">起点 Y</span><span class="prop-value">${formatNum(entity.startY)}</span></div>
+          <div class="prop-row"><span class="prop-label">终点 X</span><span class="prop-value">${formatNum(entity.endX)}</span></div>
+          <div class="prop-row"><span class="prop-label">终点 Y</span><span class="prop-value">${formatNum(entity.endY)}</span></div>
+          <div class="prop-row"><span class="prop-label">长度</span><span class="prop-value">${formatNum(entity.getLength())}</span></div>
+          <div class="prop-row"><span class="prop-label">角度</span><span class="prop-value">${formatAngle(entity.getAngle())}</span></div>
+        </div>`;
+      } else if (entity.type === 'circle') {
+        html += `<div class="panel-section">
+          <div class="panel-section-title">圆形参数</div>
+          <div class="prop-row"><span class="prop-label">圆心 X</span><span class="prop-value">${formatNum(entity.centerX)}</span></div>
+          <div class="prop-row"><span class="prop-label">圆心 Y</span><span class="prop-value">${formatNum(entity.centerY)}</span></div>
+          <div class="prop-row"><span class="prop-label">半径</span><span class="prop-value">${formatNum(entity.radius)}</span></div>
+          <div class="prop-row"><span class="prop-label">周长</span><span class="prop-value">${formatNum(entity.getCircumference())}</span></div>
+          <div class="prop-row"><span class="prop-label">面积</span><span class="prop-value">${formatNum(entity.getArea())}</span></div>
+        </div>`;
+      } else if (entity.type === 'arc') {
+        html += `<div class="panel-section">
+          <div class="panel-section-title">圆弧参数</div>
+          <div class="prop-row"><span class="prop-label">圆心 X</span><span class="prop-value">${formatNum(entity.centerX)}</span></div>
+          <div class="prop-row"><span class="prop-label">圆心 Y</span><span class="prop-value">${formatNum(entity.centerY)}</span></div>
+          <div class="prop-row"><span class="prop-label">半径</span><span class="prop-value">${formatNum(entity.radius)}</span></div>
+          <div class="prop-row"><span class="prop-label">起始角度</span><span class="prop-value">${formatAngle(entity.startAngle)}</span></div>
+          <div class="prop-row"><span class="prop-label">终止角度</span><span class="prop-value">${formatAngle(entity.endAngle)}</span></div>
+          <div class="prop-row"><span class="prop-label">弧度</span><span class="prop-value">${formatAngle(entity.getArcAngle())}</span></div>
+        </div>`;
+      }
+
+      panelContent.innerHTML = html;
+    }
+
+    // 接入选择变更回调
+    const selectTool = toolManager.getTool('select');
+    if (selectTool) {
+      selectTool.onSelectionChange = updatePropertyPanel;
+    }
+
+    // 属性面板关闭/打开
+    document.getElementById('panel-close')?.addEventListener('click', () => {
+      propertiesPanel.classList.toggle('hidden');
+    });
+
+    // 初始更新
+    updatePropertyPanel();
 
     console.log('HowdzCAD 初始化完成');
     console.log('操作说明:');
@@ -406,6 +567,7 @@
     console.log('  - F8: 切换正交模式');
     console.log('  - 命令行: LINE x1,y1 x2,y2 绘制直线');
     console.log('  - 状态栏显示实时坐标和缩放比例');
+    console.log('  - 拖拽夹点可实时修改图形形状');
   </script>
 </body>
 </html>

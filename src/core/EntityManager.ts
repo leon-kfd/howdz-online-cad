@@ -1,5 +1,12 @@
 import { Entity } from './Entity';
-import { BoundingBox } from './types';
+import { BoundingBox, Point } from './types';
+
+/** 夹点命中结果 */
+export interface GripHitResult {
+  entity: Entity;
+  gripIndex: number;
+  point: Point;
+}
 
 /**
  * 实体管理器
@@ -99,6 +106,30 @@ export class EntityManager {
       }
     }
     return hits;
+  }
+
+  /**
+   * 命中测试夹点：返回最近的夹点（在选中实体中查找）
+   */
+  public hitTestGripPoint(worldX: number, worldY: number, tolerance: number): GripHitResult | null {
+    let bestDist = tolerance;
+    let bestResult: GripHitResult | null = null;
+
+    for (const entity of this.entities) {
+      if (!entity.visible || entity.locked) continue;
+      if (!this.selectedSet.has(entity.id)) continue;
+
+      const grips = entity.getGripPoints();
+      for (let i = 0; i < grips.length; i++) {
+        const d = Math.hypot(worldX - grips[i].x, worldY - grips[i].y);
+        if (d < bestDist) {
+          bestDist = d;
+          bestResult = { entity, gripIndex: i, point: grips[i] };
+        }
+      }
+    }
+
+    return bestResult;
   }
 
   /**

@@ -40,4 +40,20 @@
   - drawOverlay viewport only has worldToScreen — compute screen radius via `Math.hypot` on screen-space points, not `viewport.scale`
   - Arc hitTest needs both circle-distance check AND angle-in-range check; normalize angles to [0, 2π) for reliable range testing
   - computeArcFromThreePoints returns null for collinear points (degenerate case)
+
+---
+
+## 2026-07-07 - US-005
+- Implemented grip point dragging and property panel for shape selection & editing
+- Files changed: `src/core/EntityManager.ts`, `src/core/tools/SelectTool.ts`, `src/index.ts`, `demo/index.html`, `tasks/prd.json`
+- EntityManager: added `hitTestGripPoint()` method to find nearest grip point on selected entities, returns `{ entity, gripIndex, point }`
+- SelectTool: added grip-dragging mode — mouseDown detects grip hits first, mouseMove calls `entity.moveGripPoint()` in real-time, mouseUp finalizes; Escape cancels drag
+- SelectTool: added `onSelectionChange` callback for external UI updates (e.g. property panel)
+- Property panel (demo): right-side panel showing entity type, layer, ID, and type-specific properties (line: start/end/length/angle; circle: center/radius/circumference/area; arc: center/radius/start/end/arc angles); supports close toggle
+- Exported `GripHitResult` type from `src/index.ts`
+- **Learnings for future iterations:**
+  - Grip hit-testing should only check selected entities (not all entities) to avoid conflicts with normal click selection
+  - During grip drag, update the tracked grip point position so the overlay highlight follows the cursor
+  - Property panel uses `entity.type === 'line'` etc. to branch — entity-specific methods (getLength, getArea etc.) are accessed directly in the demo script, not through a generic property interface
+  - `onSelectionChange` callback pattern on SelectTool is the extension point for future UI integrations (layers panel, status bar, etc.)
 ---
