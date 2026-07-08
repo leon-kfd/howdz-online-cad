@@ -34,7 +34,7 @@ export function computeLineLineFillet(
 ): { arc: ArcEntity; t1: Point; t2: Point } | null {
   const EPS = 1e-10;
 
-  // 方向向量
+  // 原始方向向量
   const d1: Point = {
     x: line1.endX - line1.startX,
     y: line1.endY - line1.startY,
@@ -49,15 +49,35 @@ export function computeLineLineFillet(
   if (len1 < EPS || len2 < EPS) return null;
 
   // 单位方向向量
-  const u1: Point = { x: d1.x / len1, y: d1.y / len1 };
-  const u2: Point = { x: d2.x / len2, y: d2.y / len2 };
+  const u1raw: Point = { x: d1.x / len1, y: d1.y / len1 };
+  const u2raw: Point = { x: d2.x / len2, y: d2.y / len2 };
 
   // 交点
   const I = lineLineIntersection(
-    { x: line1.startX, y: line1.startY }, u1,
-    { x: line2.startX, y: line2.startY }, u2,
+    { x: line1.startX, y: line1.startY }, u1raw,
+    { x: line2.startX, y: line2.startY }, u2raw,
   );
   if (!I) return null; // 平行线
+
+  // 调整方向：使方向向量都指向远离交点的方向（即沿射线方向）
+  // 判断依据：选择离交点更远的端点作为"远端点"，方向向量应指向远端点
+  const farDist1S = Math.hypot(line1.startX - I.x, line1.startY - I.y);
+  const farDist1E = Math.hypot(line1.endX - I.x, line1.endY - I.y);
+  const far1: Point = farDist1E >= farDist1S
+    ? { x: line1.endX - I.x, y: line1.endY - I.y }
+    : { x: line1.startX - I.x, y: line1.startY - I.y };
+
+  const farDist2S = Math.hypot(line2.startX - I.x, line2.startY - I.y);
+  const farDist2E = Math.hypot(line2.endX - I.x, line2.endY - I.y);
+  const far2: Point = farDist2E >= farDist2S
+    ? { x: line2.endX - I.x, y: line2.endY - I.y }
+    : { x: line2.startX - I.x, y: line2.startY - I.y };
+
+  const dot1 = u1raw.x * far1.x + u1raw.y * far1.y;
+  const dot2 = u2raw.x * far2.x + u2raw.y * far2.y;
+
+  const u1: Point = dot1 < 0 ? { x: -u1raw.x, y: -u1raw.y } : u1raw;
+  const u2: Point = dot2 < 0 ? { x: -u2raw.x, y: -u2raw.y } : u2raw;
 
   // 两线夹角（锐角）
   const cosAngle = Math.abs(u1.x * u2.x + u1.y * u2.y);
@@ -96,18 +116,18 @@ export function computeLineLineFillet(
   const v2y = T2.y - C.y;
   const cross = v1x * v2y - v1y * v2x;
 
-  let startAngle: number;
-  let endAngle: number;
-  if (cross > 0) {
-    startAngle = angle1;
-    endAngle = angle2;
-  } else {
-    startAngle = angle2;
-    endAngle = angle1;
-  }
+  // 根据叉积方向确定圆弧方向
+  // Canvas Y轴翻转：canvas逆时针(anticlockwise=true)对应数学坐标系的顺时针
+  // 我们需要绘制较小的弧（minor arc，角度<π）
+  // 根据叉积确定canvas绘制方向：
+  // cross > 0: T2在T1的数学逆时针方向 → canvas顺时针绘制(anticlockwise=false)得到minor arc
+  // cross < 0: T2在T1的数学顺时针方向 → canvas逆时针绘制(anticlockwise=true)得到minor arc
+  const startAngle = angle1;
+  const endAngle = angle2;
+  const counterclockwise = cross < 0;
 
   return {
-    arc: new ArcEntity(C.x, C.y, radius, startAngle, endAngle),
+    arc: new ArcEntity(C.x, C.y, radius, startAngle, endAngle, counterclockwise),
     t1: T1,
     t2: T2,
   };

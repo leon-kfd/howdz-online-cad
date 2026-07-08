@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Howdz CAD - 演示</title>
+  <!-- 图标系统已切换为自定义 SVG，不再依赖 Remix Icon -->
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
@@ -88,10 +89,9 @@
       background: transparent;
       color: #aaa;
     }
-    .tool-btn svg {
+    .tool-btn .icon {
       width: 20px;
       height: 20px;
-      fill: currentColor;
     }
     .tool-divider {
       width: 28px;
@@ -140,6 +140,10 @@
       color: #888;
       font-size: 16px;
       line-height: 1;
+    }
+    .panel-header .close-btn .icon {
+      width: 16px;
+      height: 16px;
     }
     .panel-header .close-btn:hover {
       color: #fff;
@@ -200,6 +204,10 @@
       align-items: center;
       justify-content: center;
     }
+    .layer-add-btn .icon {
+      width: 14px;
+      height: 14px;
+    }
     .layer-add-btn:hover {
       background: #3a3a3a;
       color: #fff;
@@ -253,7 +261,7 @@
       border: none;
       color: #888;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 14px;
       padding: 2px;
       line-height: 1;
       border-radius: 2px;
@@ -262,6 +270,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+    .layer-btn .icon {
+      width: 14px;
+      height: 14px;
     }
     .layer-btn:hover {
       background: rgba(255,255,255,0.1);
@@ -445,12 +457,19 @@
       font-size: 10px;
       padding: 0 4px;
       line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .command-toggle-btn .icon {
+      width: 14px;
+      height: 14px;
     }
     .command-toggle-btn:hover {
       color: #fff;
     }
     .command-line-body {
-      /* 继承原有样式 */
+      position: relative;
     }
     .command-line-body.collapsed {
       display: none;
@@ -551,44 +570,44 @@
       <!-- 左侧工具栏 -->
       <div class="toolbar">
         <button class="tool-btn active" id="tool-select" title="选择 (Esc)">
-          <svg viewBox="0 0 24 24"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7 18 3-7 7-3z"/></svg>
         </button>
         <div class="tool-divider"></div>
         <button class="tool-btn" id="tool-line" title="直线 (L)">
-          <svg viewBox="0 0 24 24"><line x1="5" y1="19" x2="19" y2="5" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="5" y1="19" x2="19" y2="5"/></svg>
         </button>
         <button class="tool-btn" id="tool-circle" title="圆形 (C)">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/></svg>
         </button>
         <button class="tool-btn" id="tool-arc" title="圆弧 (A)">
-          <svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 0 1 0 16" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 19A9 9 0 0 1 19 10"/></svg>
         </button>
         <div class="tool-divider"></div>
         <button class="tool-btn" id="tool-move" title="移动 (M)">
-          <svg viewBox="0 0 24 24"><path d="M12 2l4 4h-3v4h4V7l4 4-4 4v-3h-4v4h3l-4 4-4-4h3v-4H7v3l-4-4 4-4v3h4V6H8l4-4z" fill="currentColor"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
         </button>
         <button class="tool-btn" id="tool-copy" title="复制 (CO)">
-          <svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="1" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 16V5a1 1 0 0 1 1-1h11" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="1"/><path d="M16 8V6a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h2"/></svg>
         </button>
         <button class="tool-btn" id="tool-erase" title="删除 (E / Delete)">
-          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-11 11H6v-4L17 3z"/><line x1="4" y1="21" x2="20" y2="21"/></svg>
         </button>
         <div class="tool-divider"></div>
         <button class="tool-btn" id="tool-fillet" title="倒圆角 (F)">
-          <svg viewBox="0 0 24 24"><path d="M4 20V10a6 6 0 0 1 6-6h4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 19V5h14"/><path d="M5 19c0-4 3-7 7-7"/></svg>
         </button>
         <button class="tool-btn" id="tool-chamfer" title="倒角 (CHA)">
-          <svg viewBox="0 0 24 24"><path d="M4 20L10 14h4l6-6" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V5h14"/><path d="M5 19l7-7"/></svg>
         </button>
         <button class="tool-btn" id="tool-extend" title="延伸 (EX)">
-          <svg viewBox="0 0 24 24"><path d="M4 20h16M8 4v12" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 12l4-4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="12" x2="10" y2="12"/><polyline points="7 9 10 12 7 15"/><line x1="14" y1="12" x2="22" y2="12"/></svg>
         </button>
         <div class="tool-divider"></div>
         <button class="tool-btn" id="tool-undo" title="撤销 (Ctrl+Z)" disabled>
-          <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z" fill="currentColor"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
         </button>
         <button class="tool-btn" id="tool-redo" title="重做 (Ctrl+Y)" disabled>
-          <svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z" fill="currentColor"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg>
         </button>
       </div>
 
@@ -601,7 +620,7 @@
       <div class="properties-panel" id="properties-panel">
         <div class="panel-header">
           <span>属性</span>
-          <span class="close-btn" id="panel-close" title="关闭面板">×</span>
+          <span class="close-btn" id="panel-close" title="关闭面板"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></span>
         </div>
         <div id="panel-content">
           <div class="panel-empty">未选中图元</div>
@@ -610,7 +629,7 @@
         <div class="layer-section">
           <div class="panel-header">
             <span>图层</span>
-            <button class="layer-add-btn" id="layer-add" title="新建图层">+</button>
+            <button class="layer-add-btn" id="layer-add" title="新建图层"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
           </div>
           <div class="layer-list" id="layer-list"></div>
         </div>
@@ -621,7 +640,7 @@
     <div class="command-line-section">
       <div class="command-line-header" id="command-line-header">
         <span class="cmd-title">命令行</span>
-        <button class="command-toggle-btn" id="command-toggle-btn" title="折叠/展开命令行">▼</button>
+        <button class="command-toggle-btn" id="command-toggle-btn" title="折叠/展开命令行"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
       </div>
       <div class="command-line-body" id="command-line-body">
         <div class="command-line">
@@ -648,6 +667,7 @@
 
   <script type="module">
     import { HowdzCAD } from '../src/index.ts';
+    import ICONS from './icons.js';
 
     const cad = new HowdzCAD({
       container: '#cad-container',
@@ -774,6 +794,37 @@
         // 拦截SAVE命令，触发DXF导出
         if (upperCmd === 'SAVE') {
           saveDXFFile();
+          commandInput.value = '';
+          commandHistory.classList.add('visible');
+          return;
+        }
+
+        // 当倒圆角工具激活时，R <number> 设置半径
+        const activeTool = toolManager.getActiveTool?.();
+        if (activeTool?.name === 'fillet' && /^R\s+[\d.]+$/i.test(value.trim())) {
+          const rMatch = value.trim().match(/^R\s+([\d.]+)$/i);
+          if (rMatch) {
+            const radius = parseFloat(rMatch[1]);
+            if (radius > 0) {
+              activeTool.setRadius(radius);
+              addHistory(`圆角半径已设为 ${radius}`, 'success');
+            }
+          }
+          commandInput.value = '';
+          commandHistory.classList.add('visible');
+          return;
+        }
+
+        // 当倒角工具激活时，D <number> 设置倒角距离
+        if (activeTool?.name === 'chamfer' && /^D\s+[\d.]+$/i.test(value.trim())) {
+          const dMatch = value.trim().match(/^D\s+([\d.]+)$/i);
+          if (dMatch) {
+            const dist = parseFloat(dMatch[1]);
+            if (dist > 0) {
+              activeTool.setDistance(dist);
+              addHistory(`倒角距离已设为 ${dist}`, 'success');
+            }
+          }
           commandInput.value = '';
           commandHistory.classList.add('visible');
           return;
@@ -1298,9 +1349,9 @@
           <span class="layer-color" style="background: ${layer.color}" data-layer="${layer.name}" title="点击修改颜色"></span>
           <span class="layer-name" data-layer="${layer.name}" title="双击重命名">${layer.name}</span>
           <span class="layer-count">${entityCount}</span>
-          <button class="layer-btn${layer.visible ? '' : ' off'}" data-action="visibility" data-layer="${layer.name}" title="${layer.visible ? '隐藏' : '显示'}图层">${layer.visible ? '👁' : '👁‍🗨'}</button>
-          <button class="layer-btn${layer.locked ? '' : ' off'}" data-action="lock" data-layer="${layer.name}" title="${layer.locked ? '解锁' : '锁定'}图层">${layer.locked ? '🔒' : '🔓'}</button>
-          ${layer.name !== '0' ? `<button class="layer-btn" data-action="delete" data-layer="${layer.name}" title="删除图层">×</button>` : ''}
+          <button class="layer-btn${layer.visible ? '' : ' off'}" data-action="visibility" data-layer="${layer.name}" title="${layer.visible ? '隐藏' : '显示'}图层">${layer.visible ? ICONS.eye : ICONS['eye-off']}</button>
+          <button class="layer-btn${layer.locked ? '' : ' off'}" data-action="lock" data-layer="${layer.name}" title="${layer.locked ? '解锁' : '锁定'}图层">${layer.locked ? ICONS.lock : ICONS['lock-open']}</button>
+          ${layer.name !== '0' ? `<button class="layer-btn" data-action="delete" data-layer="${layer.name}" title="删除图层">${ICONS.delete}</button>` : ''}
         </div>`;
       }
       layerListEl.innerHTML = html;
@@ -1570,12 +1621,13 @@
 
     function toggleCommandLine() {
       commandLineCollapsed = !commandLineCollapsed;
+      const svg = commandToggleBtn.querySelector('svg');
       if (commandLineCollapsed) {
         commandLineBody.classList.add('collapsed');
-        commandToggleBtn.textContent = '▶';
+        svg.outerHTML = ICONS['arrow-right'];
       } else {
         commandLineBody.classList.remove('collapsed');
-        commandToggleBtn.textContent = '▼';
+        svg.outerHTML = ICONS['arrow-down'];
       }
     }
 

@@ -337,8 +337,10 @@ export class ArcEntity extends Entity {
   public radius: number;
   /** 起始角度（弧度，数学坐标系） */
   public startAngle: number;
-  /** 终止角度（弧度，数学坐标系），圆弧从startAngle逆时针到endAngle */
+  /** 终止角度（弧度，数学坐标系），圆弧从startAngle到endAngle */
   public endAngle: number;
+  /** 圆弧方向：true=逆时针，false=顺时针 */
+  public counterclockwise: boolean;
 
   constructor(
     centerX: number,
@@ -346,6 +348,7 @@ export class ArcEntity extends Entity {
     radius: number,
     startAngle: number,
     endAngle: number,
+    counterclockwise: boolean = true,
     id?: string,
   ) {
     super('arc', id);
@@ -354,6 +357,7 @@ export class ArcEntity extends Entity {
     this.radius = radius;
     this.startAngle = startAngle;
     this.endAngle = endAngle;
+    this.counterclockwise = counterclockwise;
   }
 
   public getBoundingBox(): BoundingBox {
@@ -399,15 +403,15 @@ export class ArcEntity extends Entity {
     ctx.strokeStyle = this.color || '#e0e0e0';
     ctx.lineWidth = selected ? 2 : 1;
     ctx.beginPath();
-    // Canvas Y轴翻转，传入数学角度并使用 counterclockwise=true
-    // 屏幕上视觉效果与数学坐标系一致（逆时针）
+    // Canvas Y轴翻转，传入数学角度
+    // counterclockwise 直接控制canvas的anticlockwise参数
     ctx.arc(
       center.x,
       center.y,
       Math.abs(screenRadius),
       this.startAngle,
       this.endAngle,
-      true, // counterclockwise
+      this.counterclockwise,
     );
     ctx.stroke();
 
@@ -474,6 +478,7 @@ export class ArcEntity extends Entity {
       this.radius,
       this.startAngle,
       this.endAngle,
+      this.counterclockwise,
     );
     copy.layer = this.layer;
     copy.color = this.color;
@@ -484,7 +489,17 @@ export class ArcEntity extends Entity {
 
   /** 获取圆弧的中点 */
   public getMidPoint(): Point {
-    const midAngle = this.startAngle + this.getArcAngle() / 2;
+    // 将角度标准化到 [0, 2π) 范围
+    const normalize = (a: number): number => ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const start = normalize(this.startAngle);
+    const arcAngle = this.getArcAngle();
+
+    let midAngle: number;
+    if (this.counterclockwise) {
+      midAngle = normalize(start + arcAngle / 2);
+    } else {
+      midAngle = normalize(start - arcAngle / 2);
+    }
     return {
       x: this.centerX + this.radius * Math.cos(midAngle),
       y: this.centerY + this.radius * Math.sin(midAngle),
@@ -511,8 +526,29 @@ export class ArcEntity extends Entity {
    * 获取圆弧的弧度（总是正值，范围 [0, 2π)）
    */
   public getArcAngle(): number {
-    let sweep = this.endAngle - this.startAngle;
-    if (sweep < 0) sweep += 2 * Math.PI;
+    // 将角度标准化到 [0, 2π) 范围
+    const normalize = (a: number): number => ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const start = normalize(this.startAngle);
+    const end = normalize(this.endAngle);
+
+    let sweep: number;
+    if (this.counterclockwise) {
+      // 逆时针：从start到end的逆时针角度（从大角度到小角度）
+      if (start >= end) {
+        sweep = start - end;
+      } else {
+        // 跨越0/2π边界
+        sweep = start + (2 * Math.PI - end);
+      }
+    } else {
+      // 顺时针：从start到end的顺时针角度（从小角度到大角度）
+      if (end >= start) {
+        sweep = end - start;
+      } else {
+        // 跨越0/2π边界
+        sweep = (2 * Math.PI - start) + end;
+      }
+    }
     return sweep;
   }
 
@@ -527,11 +563,24 @@ export class ArcEntity extends Entity {
     const start = normalize(this.startAngle);
     const end = normalize(this.endAngle);
 
-    if (start <= end) {
-      return a >= start && a <= end;
+    if (this.counterclockwise) {
+      // 逆时针：从start(大角度)到end(小角度)的逆时针范围
+      if (start >= end) {
+        // 正常情况：start > end
+        return a >= end && a <= start;
+      } else {
+        // 跨越 0/2π 边界
+        return a >= end || a <= start;
+      }
     } else {
-      // 跨越 0/2π 边界
-      return a >= start || a <= end;
+      // 顺时针：从start(小角度)到end(大角度)的顺时针范围
+      if (end >= start) {
+        // 正常情况：end > start
+        return a >= start && a <= end;
+      } else {
+        // 跨越 0/2π 边界
+        return a >= start || a <= end;
+      }
     }
   }
 

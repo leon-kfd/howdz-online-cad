@@ -91,9 +91,8 @@ export class MoveTool extends BaseTool {
     const dx = targetPoint.x - this.basePoint.x;
     const dy = targetPoint.y - this.basePoint.y;
 
-    for (const entity of this.sourceEntities) {
-      entity.move(dx, dy);
-    }
+    // 使用EntityManager的方法，支持撤销
+    this.entityManager.moveEntities(this.sourceEntities, dx, dy);
 
     // 移动完成后重置基点，允许继续移动（不退出工具）
     this.basePoint = null;

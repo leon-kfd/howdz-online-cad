@@ -1,6 +1,7 @@
 import { Entity } from './Entity';
 import { BoundingBox, Point } from './types';
 import { HistoryManager } from './commands/HistoryManager';
+import { AddEntityCommand, RemoveEntityCommand, MoveEntityCommand } from './commands/Command';
 import { LayerManager } from './LayerManager';
 
 /** 夹点命中结果 */
@@ -63,10 +64,40 @@ export class EntityManager {
 
   /**
    * 添加实体
+   * @param entity 要添加的实体
+   * @param recordHistory 是否记录到历史（默认true）
    */
-  public add(entity: Entity): void {
+  public add(entity: Entity, recordHistory: boolean = true): void {
+    if (recordHistory) {
+      const command = new AddEntityCommand(
+        [entity],
+        (e) => this.addDirect(e),
+        (e) => this.removeDirect(e),
+      );
+      this.historyManager.record(command);
+    }
     this.entities.push(entity);
     this.onChange?.();
+  }
+
+  /**
+   * 直接添加实体（不记录历史，供Command内部使用）
+   */
+  private addDirect(entity: Entity): void {
+    this.entities.push(entity);
+    this.onChange?.();
+  }
+
+  /**
+   * 直接移除实体（不记录历史，供Command内部使用）
+   */
+  private removeDirect(entity: Entity): boolean {
+    const index = this.entities.indexOf(entity);
+    if (index === -1) return false;
+    this.entities.splice(index, 1);
+    this.selectedSet.delete(entity.id);
+    this.onChange?.();
+    return true;
   }
 
   /**
@@ -278,6 +309,25 @@ export class EntityManager {
     return this.selectedSet.size;
   }
 
+  /**
+   * 移动实体（支持撤销）
+   * @param entities 要移动的实体
+   * @param dx X偏移量
+   * @param dy Y偏移量
+   */
+  public moveEntities(entities: Entity[], dx: number, dy: number): void {
+    if (entities.length === 0) return;
+
+    const command = new MoveEntityCommand(entities, dx, dy, `移动 ${entities.length} 个图元`);
+    this.historyManager.record(command);
+
+    // 执行移动
+    for (const entity of entities) {
+      entity.move(dx, dy);
+    }
+    this.onChange?.();
+  }
+
   // ========== 历史管理 ==========
 
   /**
@@ -339,10 +389,19 @@ export class EntityManager {
     const selected = this.getSelected();
     if (selected.length === 0) return 0;
 
-    // 记录第一个被删实体在数组中的位置（用于精确撤销恢复位置）
-    const firstIndex = this.entities.indexOf(selected[0]);
+    // 使用Command模式记录历史
+    const command = new RemoveEntityCommand(
+      selected,
+      (e) => this.addDirect(e),
+      (e) => this.removeDirect(e),
+      () => [...this.entities],
+      `删除 ${selected.length} 个图元`,
+    );
 
-    // 从实体数组中移除
+    // 先记录到历史，再执行删除
+    this.historyManager.record(command);
+
+    // 执行删除
     for (const entity of selected) {
       const idx = this.entities.indexOf(entity);
       if (idx !== -1) {
@@ -351,9 +410,6 @@ export class EntityManager {
     }
     this.selectedSet.clear();
 
-    // 记录到历史（使用旧的撤销栈保持兼容性）
-    this.undoStack.push({ entities: selected, index: firstIndex });
-    this.redoStack = [];
     this.onChange?.();
     return selected.length;
   }
