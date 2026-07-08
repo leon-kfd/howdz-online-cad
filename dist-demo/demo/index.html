@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Howdz CAD - 演示</title>
+  <!-- 图标系统已切换为自定义 SVG，不再依赖 Remix Icon -->
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Microsoft YaHei', sans-serif;
+      background: #1a1a1a;
+    }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* 顶部菜单栏 */
+    .menu-bar {
+      height: 32px;
+      background: #2d2d2d;
+      border-bottom: 1px solid #3a3a3a;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      gap: 4px;
+    }
+    .menu-item {
+      color: #ccc;
+      font-size: 13px;
+      padding: 4px 12px;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    .menu-item:hover {
+      background: #3a3a3a;
+    }
+
+    /* 主体区域 */
+    .main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* 左侧工具栏 */
+    .toolbar {
+      width: 48px;
+      background: #252525;
+      border-right: 1px solid #3a3a3a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 0;
+      gap: 4px;
+    }
+    .tool-btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #aaa;
+      font-size: 11px;
+      border: none;
+      background: transparent;
+    }
+    .tool-btn:hover {
+      background: #3a3a3a;
+      color: #fff;
+    }
+    .tool-btn.active {
+      background: #0078d4;
+      color: #fff;
+    }
+    .tool-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .tool-btn:disabled:hover {
+      background: transparent;
+      color: #aaa;
+    }
+    .tool-btn .icon {
+      width: 20px;
+      height: 20px;
+    }
+    .tool-divider {
+      width: 28px;
+      height: 1px;
+      background: #3a3a3a;
+      margin: 4px 0;
+    }
+
+    /* 绘图区域 */
+    .canvas-area {
+      flex: 1;
+      position: relative;
+    }
+    #cad-container {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* 右侧属性面板 */
+    .properties-panel {
+      width: 220px;
+      background: #252525;
+      border-left: 1px solid #3a3a3a;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      font-size: 12px;
+      color: #ccc;
+    }
+    .properties-panel.hidden {
+      display: none;
+    }
+    .panel-header {
+      padding: 8px 12px;
+      background: #2d2d2d;
+      border-bottom: 1px solid #3a3a3a;
+      font-size: 13px;
+      font-weight: bold;
+      color: #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-header .close-btn {
+      cursor: pointer;
+      color: #888;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .panel-header .close-btn .icon {
+      width: 16px;
+      height: 16px;
+    }
+    .panel-header .close-btn:hover {
+      color: #fff;
+    }
+    .panel-section {
+      padding: 8px 12px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .panel-section-title {
+      font-size: 11px;
+      color: #888;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+    .prop-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+      line-height: 1.6;
+    }
+    .prop-label {
+      color: #999;
+    }
+    .prop-value {
+      color: #ddd;
+      font-family: 'Consolas', monospace;
+    }
+    .panel-empty {
+      padding: 20px 12px;
+      text-align: center;
+      color: #555;
+      font-size: 12px;
+    }
+
+    /* 图层管理面板 */
+    .layer-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      border-top: 1px solid #3a3a3a;
+    }
+    .layer-section .panel-header {
+      flex-shrink: 0;
+    }
+    .layer-add-btn {
+      background: none;
+      border: 1px solid #555;
+      color: #aaa;
+      width: 22px;
+      height: 22px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .layer-add-btn .icon {
+      width: 14px;
+      height: 14px;
+    }
+    .layer-add-btn:hover {
+      background: #3a3a3a;
+      color: #fff;
+      border-color: #666;
+    }
+    .layer-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+    .layer-item {
+      display: flex;
+      align-items: center;
+      padding: 4px 12px;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #ccc;
+      user-select: none;
+    }
+    .layer-item:hover {
+      background: #2a2a2a;
+    }
+    .layer-item.active {
+      background: #0078d4;
+      color: #fff;
+    }
+    .layer-item.active:hover {
+      background: #006cbd;
+    }
+    .layer-color {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px;
+      border: 1px solid #555;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .layer-item.active .layer-color {
+      border-color: rgba(255,255,255,0.5);
+    }
+    .layer-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: 'Consolas', monospace;
+    }
+    .layer-btn {
+      background: none;
+      border: none;
+      color: #888;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px;
+      line-height: 1;
+      border-radius: 2px;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .layer-btn .icon {
+      width: 14px;
+      height: 14px;
+    }
+    .layer-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    .layer-item.active .layer-btn {
+      color: rgba(255,255,255,0.7);
+    }
+    .layer-item.active .layer-btn:hover {
+      color: #fff;
+    }
+    .layer-btn.off {
+      color: #555;
+    }
+    .layer-item.active .layer-btn.off {
+      color: rgba(255,255,255,0.3);
+    }
+    .layer-count {
+      font-size: 10px;
+      color: #666;
+      font-family: 'Consolas', monospace;
+      min-width: 16px;
+      text-align: right;
+    }
+    .layer-item.active .layer-count {
+      color: rgba(255,255,255,0.5);
+    }
+
+    /* 底部命令行 */
+    .command-line {
+      height: 28px;
+      background: #252525;
+      border-top: 1px solid #3a3a3a;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+    }
+    .command-prompt {
+      color: #999;
+      font-size: 12px;
+      font-family: 'Consolas', monospace;
+      margin-right: 8px;
+    }
+    .command-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #ddd;
+      font-size: 12px;
+      font-family: 'Consolas', monospace;
+      outline: none;
+    }
+
+    /* 命令历史 */
+    .command-history {
+      position: absolute;
+      bottom: 28px;
+      left: 0;
+      right: 0;
+      max-height: 200px;
+      overflow-y: auto;
+      background: #1e1e1e;
+      border-top: 1px solid #3a3a3a;
+      padding: 4px 10px;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      color: #888;
+      display: none;
+    }
+    .command-history.visible {
+      display: block;
+    }
+    .command-history .history-line {
+      padding: 1px 0;
+    }
+    .command-history .history-line.error {
+      color: #e06060;
+    }
+    .command-history .history-line.success {
+      color: #60c060;
+    }
+
+    /* 提示浮层 */
+    .hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #555;
+      font-size: 14px;
+      pointer-events: none;
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    /* 隐藏CAD内部状态栏（用外部布局状态栏替代） */
+    #cad-container > div {
+      display: none;
+    }
+
+    /* 菜单下拉 */
+    .menu-item {
+      position: relative;
+    }
+    .menu-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: #2d2d2d;
+      border: 1px solid #3a3a3a;
+      border-radius: 0 0 4px 4px;
+      min-width: 200px;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      padding: 4px 0;
+    }
+    .menu-item.open .menu-dropdown {
+      display: block;
+    }
+    .menu-dropdown-item {
+      padding: 6px 16px;
+      color: #ccc;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      white-space: nowrap;
+    }
+    .menu-dropdown-item:hover {
+      background: #3a3a3a;
+      color: #fff;
+    }
+    .menu-dropdown-item .shortcut {
+      color: #888;
+      font-size: 11px;
+      margin-left: 24px;
+    }
+    .menu-dropdown-item.disabled {
+      color: #555;
+      cursor: default;
+    }
+    .menu-dropdown-item.disabled:hover {
+      background: transparent;
+      color: #555;
+    }
+    .menu-dropdown-divider {
+      height: 1px;
+      background: #3a3a3a;
+      margin: 4px 0;
+    }
+
+    /* 可折叠命令行 */
+    .command-line-section {
+      flex-shrink: 0;
+    }
+    .command-line-header {
+      height: 22px;
+      background: #2d2d2d;
+      border-top: 1px solid #3a3a3a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .command-line-header:hover {
+      background: #333;
+    }
+    .command-line-header .cmd-title {
+      color: #999;
+      font-size: 11px;
+    }
+    .command-toggle-btn {
+      background: none;
+      border: none;
+      color: #888;
+      cursor: pointer;
+      font-size: 10px;
+      padding: 0 4px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .command-toggle-btn .icon {
+      width: 14px;
+      height: 14px;
+    }
+    .command-toggle-btn:hover {
+      color: #fff;
+    }
+    .command-line-body {
+      position: relative;
+    }
+    .command-line-body.collapsed {
+      display: none;
+    }
+
+    /* 底部状态栏 */
+    .status-bar {
+      height: 24px;
+      background: #2d2d2d;
+      border-top: 1px solid #3a3a3a;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 16px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px;
+      color: #999;
+      flex-shrink: 0;
+      user-select: none;
+    }
+    .status-bar .status-item {
+      display: inline;
+    }
+    .status-bar .status-active {
+      color: #0078d4;
+    }
+    .status-bar .status-sep {
+      width: 1px;
+      height: 14px;
+      background: #3a3a3a;
+    }
+  </style>
+  <script type="module" crossorigin>var de=Object.defineProperty;var ue=(a,s,t)=>s in a?de(a,s,{enumerable:!0,configurable:!0,writable:!0,value:t}):a[s]=t;var h=(a,s,t)=>ue(a,typeof s!="symbol"?s+"":s,t);(function(){const s=document.createElement("link").relList;if(s&&s.supports&&s.supports("modulepreload"))return;for(const n of document.querySelectorAll('link[rel="modulepreload"]'))e(n);new MutationObserver(n=>{for(const i of n)if(i.type==="childList")for(const r of i.addedNodes)r.tagName==="LINK"&&r.rel==="modulepreload"&&e(r)}).observe(document,{childList:!0,subtree:!0});function t(n){const i={};return n.integrity&&(i.integrity=n.integrity),n.referrerPolicy&&(i.referrerPolicy=n.referrerPolicy),n.crossOrigin==="use-credentials"?i.credentials="include":n.crossOrigin==="anonymous"?i.credentials="omit":i.credentials="same-origin",i}function e(n){if(n.ep)return;n.ep=!0;const i=t(n);fetch(n.href,i)}})();var G=(a=>(a[a.Left=0]="Left",a[a.Middle=1]="Middle",a[a.Right=2]="Right",a))(G||{});function wt(a,s,t){return Math.min(Math.max(a,s),t)}function ye(a){const s=Math.floor(Math.log10(a)),t=a/Math.pow(10,s);let e;return t<=1?e=1:t<=2?e=2:t<=5?e=5:e=10,e*Math.pow(10,s)}function fe(a,s=60){const t=s/a;return ye(t)}function Ct(a,s=2){return a.toFixed(s)}const Et=.01,St=100,pe=.001;class ge{constructor(s){h(this,"offsetX",0);h(this,"offsetY",0);h(this,"scale",1);h(this,"mouseWorld",{x:0,y:0});h(this,"mouseScreen",{x:0,y:0});h(this,"canvas");h(this,"isPanning",!1);h(this,"panStartScreen",{x:0,y:0});h(this,"panStartOffset",{x:0,y:0});h(this,"onUpdate",null);h(this,"onMouseDown",s=>{s.button===G.Middle&&(this.isPanning=!0,this.panStartScreen={x:s.clientX,y:s.clientY},this.panStartOffset={x:this.offsetX,y:this.offsetY},this.canvas.style.cursor="grabbing",s.preventDefault())});h(this,"onMouseMove",s=>{var e;const t=this.canvas.getBoundingClientRect();if(this.mouseScreen={x:s.clientX-t.left,y:s.clientY-t.top},this.mouseWorld=this.screenToWorld(this.mouseScreen.x,this.mouseScreen.y),this.isPanning){const n=s.clientX-this.panStartScreen.x,i=s.clientY-this.panStartScreen.y;this.offsetX=this.panStartOffset.x+n/this.scale,this.offsetY=this.panStartOffset.y+i/this.scale}(e=this.onUpdate)==null||e.call(this)});h(this,"onMouseUp",()=>{this.isPanning&&(this.isPanning=!1,this.canvas.style.cursor="crosshair")});h(this,"onWheel",s=>{var l;s.preventDefault();const t=this.canvas.getBoundingClientRect(),e=s.clientX-t.left,n=s.clientY-t.top,i=this.screenToWorld(e,n),r=-s.deltaY*pe,o=wt(this.scale*(1+r),Et,St);this.scale=o;const c=this.screenToWorld(e,n);this.offsetX+=c.x-i.x,this.offsetY+=c.y-i.y,(l=this.onUpdate)==null||l.call(this)});h(this,"onContextMenu",s=>{s.preventDefault()});this.canvas=s,this.bindEvents()}bindEvents(){this.canvas.addEventListener("mousedown",this.onMouseDown),this.canvas.addEventListener("mousemove",this.onMouseMove),this.canvas.addEventListener("mouseup",this.onMouseUp),this.canvas.addEventListener("wheel",this.onWheel,{passive:!1}),this.canvas.addEventListener("contextmenu",this.onContextMenu),this.canvas.addEventListener("mouseleave",this.onMouseUp)}destroy(){this.canvas.removeEventListener("mousedown",this.onMouseDown),this.canvas.removeEventListener("mousemove",this.onMouseMove),this.canvas.removeEventListener("mouseup",this.onMouseUp),this.canvas.removeEventListener("wheel",this.onWheel),this.canvas.removeEventListener("contextmenu",this.onContextMenu),this.canvas.removeEventListener("mouseleave",this.onMouseUp)}screenToWorld(s,t){return{x:s/this.scale-this.offsetX,y:t/this.scale-this.offsetY}}worldToScreen(s,t){return{x:(s+this.offsetX)*this.scale,y:(t+this.offsetY)*this.scale}}getState(){return{offsetX:this.offsetX,offsetY:this.offsetY,scale:this.scale}}reset(){var s;this.offsetX=0,this.offsetY=0,this.scale=1,(s=this.onUpdate)==null||s.call(this)}fitBounds(s,t,e,n,i,r){var x;const o=e-s,c=n-t;if(o===0&&c===0){this.reset();return}const l=50,d=(i-l*2)/o,u=(r-l*2)/c;this.scale=wt(Math.min(d,u),Et,St);const f=(s+e)/2,p=(t+n)/2;this.offsetX=i/2/this.scale-f,this.offsetY=r/2/this.scale-p,(x=this.onUpdate)==null||x.call(this)}}const tt={background:"#1e1e1e",grid:"#2a2a2a",gridMajor:"#3a3a3a",axisX:"#e06060",axisY:"#60c060",crosshair:"#cccccc",coordinateText:"#999999"};class me{constructor(s,t,e={}){h(this,"canvas");h(this,"ctx");h(this,"viewport");h(this,"entityManager",null);h(this,"layerManager",null);h(this,"colors");h(this,"showGrid");h(this,"showAxes");h(this,"overlayRenderer",null);h(this,"rafId",0);h(this,"frameCount",0);h(this,"lastFpsTime",0);h(this,"fps",0);h(this,"render",()=>{const{width:s,height:t}=this.getSize();this.ctx.fillStyle=this.colors.background,this.ctx.fillRect(0,0,s,t),this.showGrid&&this.drawGrid(s,t),this.showAxes&&this.drawAxes(s,t),this.drawEntities(),this.drawCrosshair(s,t),this.overlayRenderer&&this.overlayRenderer(this.ctx),this.frameCount++;const e=performance.now();e-this.lastFpsTime>=1e3&&(this.fps=this.frameCount,this.frameCount=0,this.lastFpsTime=e),this.rafId=requestAnimationFrame(this.render)});this.canvas=s,this.viewport=t,this.entityManager=e.entityManager??null,this.showGrid=e.showGrid??!0,this.showAxes=e.showAxes??!0,this.colors={...tt,background:e.backgroundColor??tt.background,grid:e.gridColor??tt.grid,gridMajor:e.gridMajorColor??tt.gridMajor};const n=s.getContext("2d");if(!n)throw new Error("无法创建Canvas 2D上下文");this.ctx=n,this.canvas.style.cursor="crosshair"}setOverlayRenderer(s){this.overlayRenderer=s}setLayerManager(s){this.layerManager=s}resize(){const s=window.devicePixelRatio||1,t=this.canvas.getBoundingClientRect();this.canvas.width=t.width*s,this.canvas.height=t.height*s,this.ctx.scale(s,s)}getSize(){const s=this.canvas.getBoundingClientRect();return{width:s.width,height:s.height}}start(){this.lastFpsTime=performance.now(),this.render()}stop(){this.rafId&&(cancelAnimationFrame(this.rafId),this.rafId=0)}drawEntities(){if(!this.entityManager)return;const s=this.entityManager.getAll();for(const t of s){if(!t.visible||this.layerManager&&!this.layerManager.isLayerVisible(t.layer))continue;const e=this.entityManager.isSelected(t),n=t.color;!t.color&&this.layerManager&&(t.color=this.layerManager.getLayerColor(t.layer)),t.draw(this.ctx,this.viewport,e),t.color=n}}drawGrid(s,t){const{scale:e,offsetX:n,offsetY:i}=this.viewport,r=this.ctx,o=fe(e),c=o*5,l=this.viewport.screenToWorld(0,0),d=this.viewport.screenToWorld(s,t),u=Math.floor(l.x/o)*o,f=Math.ceil(d.x/o)*o,p=Math.floor(l.y/o)*o,x=Math.ceil(d.y/o)*o;r.lineWidth=1,r.strokeStyle=this.colors.grid,r.beginPath();for(let w=u;w<=f;w+=o){const E=Math.round((w+n)*e)+.5;r.moveTo(E,0),r.lineTo(E,t)}for(let w=p;w<=x;w+=o){const E=Math.round((w+i)*e)+.5;r.moveTo(0,E),r.lineTo(s,E)}r.stroke();const m=Math.floor(l.x/c)*c,C=Math.ceil(d.x/c)*c,b=Math.floor(l.y/c)*c,L=Math.ceil(d.y/c)*c;r.strokeStyle=this.colors.gridMajor,r.beginPath();for(let w=m;w<=C;w+=c){const E=Math.round((w+n)*e)+.5;r.moveTo(E,0),r.lineTo(E,t)}for(let w=b;w<=L;w+=c){const E=Math.round((w+i)*e)+.5;r.moveTo(0,E),r.lineTo(s,E)}r.stroke()}drawAxes(s,t){const e=this.viewport.worldToScreen(0,0),n=this.ctx,i=30;e.x>=0&&e.x<=s&&(n.strokeStyle=this.colors.axisX,n.lineWidth=2,n.beginPath(),n.moveTo(e.x,e.y),n.lineTo(e.x+i,e.y),n.lineTo(e.x+i-6,e.y-4),n.moveTo(e.x+i,e.y),n.lineTo(e.x+i-6,e.y+4),n.stroke(),n.fillStyle=this.colors.axisX,n.font="10px monospace",n.fillText("X",e.x+i+4,e.y+4)),e.y>=0&&e.y<=t&&(n.strokeStyle=this.colors.axisY,n.lineWidth=2,n.beginPath(),n.moveTo(e.x,e.y),n.lineTo(e.x,e.y-i),n.lineTo(e.x-4,e.y-i+6),n.moveTo(e.x,e.y-i),n.lineTo(e.x+4,e.y-i+6),n.stroke(),n.fillStyle=this.colors.axisY,n.font="10px monospace",n.fillText("Y",e.x+4,e.y-i-4))}drawCrosshair(s,t){const{mouseScreen:e}=this.viewport,n=this.ctx;e.x<0||e.x>s||e.y<0||e.y>t||(n.strokeStyle=this.colors.crosshair,n.lineWidth=.5,n.setLineDash([4,4]),n.beginPath(),n.moveTo(0,e.y),n.lineTo(s,e.y),n.stroke(),n.beginPath(),n.moveTo(e.x,0),n.lineTo(e.x,t),n.stroke(),n.setLineDash([]),n.fillStyle=this.colors.crosshair,n.beginPath(),n.arc(e.x,e.y,2,0,Math.PI*2),n.fill())}setShowGrid(s){this.showGrid=s}setShowAxes(s){this.showAxes=s}destroy(){this.stop()}}class ve{constructor(s=0){h(this,"undoStack",[]);h(this,"redoStack",[]);h(this,"maxHistory");h(this,"onChange",null);this.maxHistory=s}execute(s){var t;s.execute(),this.undoStack.push(s),this.redoStack=[],this.maxHistory>0&&this.undoStack.length>this.maxHistory&&this.undoStack.shift(),(t=this.onChange)==null||t.call(this)}record(s){var t;this.undoStack.push(s),this.redoStack=[],this.maxHistory>0&&this.undoStack.length>this.maxHistory&&this.undoStack.shift(),(t=this.onChange)==null||t.call(this)}undo(){var t;const s=this.undoStack.pop();return s?(s.undo(),this.redoStack.push(s),(t=this.onChange)==null||t.call(this),!0):!1}redo(){var t;const s=this.redoStack.pop();return s?(s.execute(),this.undoStack.push(s),(t=this.onChange)==null||t.call(this),!0):!1}canUndo(){return this.undoStack.length>0}canRedo(){return this.redoStack.length>0}getUndoCount(){return this.undoStack.length}getRedoCount(){return this.redoStack.length}clear(){var s;this.undoStack=[],this.redoStack=[],(s=this.onChange)==null||s.call(this)}getUndoDescription(){return this.undoStack.length===0?null:this.undoStack[this.undoStack.length-1].description}getRedoDescription(){return this.redoStack.length===0?null:this.redoStack[this.redoStack.length-1].description}}class Me{constructor(s,t,e,n){h(this,"description");h(this,"entities");h(this,"addFn");h(this,"removeFn");this.entities=s,this.addFn=t,this.removeFn=e,this.description=n||`添加 ${s.length} 个图元`}execute(){for(const s of this.entities)this.addFn(s)}undo(){for(const s of this.entities)this.removeFn(s)}}class xe{constructor(s,t,e,n,i){h(this,"description");h(this,"entities");h(this,"indices");h(this,"addFn");h(this,"removeFn");h(this,"getAllFn");this.entities=s,this.indices=[],this.addFn=t,this.removeFn=e,this.getAllFn=n,this.description=i||`删除 ${s.length} 个图元`}execute(){const s=this.getAllFn();this.indices=this.entities.map(t=>s.indexOf(t));for(const t of this.entities)this.removeFn(t)}undo(){const s=this.entities.map((t,e)=>({entity:t,index:this.indices[e]})).sort((t,e)=>t.index-e.index);for(const{entity:t}of s)this.addFn(t)}}class we{constructor(s,t,e,n){h(this,"description");h(this,"entities");h(this,"dx");h(this,"dy");this.entities=s,this.dx=t,this.dy=e,this.description=n||`移动 ${s.length} 个图元`}execute(){for(const s of this.entities)s.move(this.dx,this.dy)}undo(){for(const s of this.entities)s.move(-this.dx,-this.dy)}}class Ce{constructor(){h(this,"entities",[]);h(this,"selectedSet",new Set);h(this,"historyManager");h(this,"layerManager",null);h(this,"undoStack",[]);h(this,"redoStack",[]);h(this,"onChange",null);this.historyManager=new ve}setLayerManager(s){this.layerManager=s}getLayerManager(){return this.layerManager}isEntityInteractive(s){return!(!s.visible||s.locked||this.layerManager&&(!this.layerManager.isLayerVisible(s.layer)||this.layerManager.isLayerLocked(s.layer)))}add(s,t=!0){var e;if(t){const n=new Me([s],i=>this.addDirect(i),i=>this.removeDirect(i));this.historyManager.record(n)}this.entities.push(s),(e=this.onChange)==null||e.call(this)}addDirect(s){var t;this.entities.push(s),(t=this.onChange)==null||t.call(this)}removeDirect(s){var e;const t=this.entities.indexOf(s);return t===-1?!1:(this.entities.splice(t,1),this.selectedSet.delete(s.id),(e=this.onChange)==null||e.call(this),!0)}addAll(s){var t;this.entities.push(...s),(t=this.onChange)==null||t.call(this)}remove(s){var e;const t=this.entities.indexOf(s);return t===-1?!1:(this.entities.splice(t,1),this.selectedSet.delete(s.id),(e=this.onChange)==null||e.call(this),!0)}removeById(s){var e;const t=this.entities.findIndex(n=>n.id===s);return t===-1?!1:(this.entities.splice(t,1),this.selectedSet.delete(s),(e=this.onChange)==null||e.call(this),!0)}clear(){var s;this.entities=[],this.selectedSet.clear(),(s=this.onChange)==null||s.call(this)}getAll(){return this.entities}getCount(){return this.entities.length}getById(s){return this.entities.find(t=>t.id===s)}hitTest(s,t,e){const n=[];for(let i=this.entities.length-1;i>=0;i--){const r=this.entities[i];this.isEntityInteractive(r)&&r.hitTest(s,t,e)&&n.push(r)}return n}hitTestGripPoint(s,t,e){let n=e,i=null;for(const r of this.entities){if(!this.isEntityInteractive(r)||!this.selectedSet.has(r.id))continue;const o=r.getGripPoints();for(let c=0;c<o.length;c++){const l=Math.hypot(s-o[c].x,t-o[c].y);l<n&&(n=l,i={entity:r,gripIndex:c,point:o[c]})}}return i}hitTestBoundingBox(s,t){const e=[];for(const n of this.entities){if(!this.isEntityInteractive(n))continue;const i=n.getBoundingBox();t?i.minX>=s.minX&&i.minY>=s.minY&&i.maxX<=s.maxX&&i.maxY<=s.maxY&&e.push(n):i.minX<=s.maxX&&i.maxX>=s.minX&&i.minY<=s.maxY&&i.maxY>=s.minY&&e.push(n)}return e}select(s){var t;this.selectedSet.clear(),this.selectedSet.add(s.id),(t=this.onChange)==null||t.call(this)}selectAdd(s){var t;this.selectedSet.add(s.id),(t=this.onChange)==null||t.call(this)}selectRemove(s){var t;this.selectedSet.delete(s.id),(t=this.onChange)==null||t.call(this)}selectAll(s){var t;this.selectedSet.clear();for(const e of s)this.selectedSet.add(e.id);(t=this.onChange)==null||t.call(this)}clearSelection(){var s;this.selectedSet.size!==0&&(this.selectedSet.clear(),(s=this.onChange)==null||s.call(this))}toggleSelect(s){var t;this.selectedSet.has(s.id)?this.selectedSet.delete(s.id):this.selectedSet.add(s.id),(t=this.onChange)==null||t.call(this)}isSelected(s){return this.selectedSet.has(s.id)}getSelected(){return this.entities.filter(s=>this.selectedSet.has(s.id))}getSelectedCount(){return this.selectedSet.size}moveEntities(s,t,e){var i;if(s.length===0)return;const n=new we(s,t,e,`移动 ${s.length} 个图元`);this.historyManager.record(n);for(const r of s)r.move(t,e);(i=this.onChange)==null||i.call(this)}getHistoryManager(){return this.historyManager}undo(){return this.historyManager.undo()}redo(){return this.historyManager.redo()}canUndo(){return this.historyManager.canUndo()}canRedo(){return this.historyManager.canRedo()}getUndoCount(){return this.historyManager.getUndoCount()}getRedoCount(){return this.historyManager.getRedoCount()}eraseSelected(){var e;const s=this.getSelected();if(s.length===0)return 0;const t=new xe(s,n=>this.addDirect(n),n=>this.removeDirect(n),()=>[...this.entities],`删除 ${s.length} 个图元`);this.historyManager.record(t);for(const n of s){const i=this.entities.indexOf(n);i!==-1&&this.entities.splice(i,1)}return this.selectedSet.clear(),(e=this.onChange)==null||e.call(this),s.length}legacyUndo(){var e;const s=this.undoStack.pop();if(!s)return 0;const t=Math.min(s.index,this.entities.length);return this.entities.splice(t,0,...s.entities),this.redoStack.push({entities:s.entities,index:t}),(e=this.onChange)==null||e.call(this),s.entities.length}legacyRedo(){var t;const s=this.redoStack.pop();if(!s)return 0;for(const e of s.entities){const n=this.entities.indexOf(e);n!==-1&&this.entities.splice(n,1)}return this.undoStack.push(s),(t=this.onChange)==null||t.call(this),s.entities.length}}class Ee{constructor(){h(this,"layers",[]);h(this,"currentLayerName","0");h(this,"onChange",null);this.layers.push({name:"0",color:"#FFFFFF",visible:!0,locked:!1})}addLayer(s,t="#FFFFFF"){var n;if(this.hasLayer(s))return null;const e={name:s,color:t,visible:!0,locked:!1};return this.layers.push(e),(n=this.onChange)==null||n.call(this),e}removeLayer(s){var e;if(s==="0"||s===this.currentLayerName)return!1;const t=this.layers.findIndex(n=>n.name===s);return t===-1?!1:(this.layers.splice(t,1),(e=this.onChange)==null||e.call(this),!0)}renameLayer(s,t){var n;if(s==="0")return!1;if(s===t)return!0;if(this.hasLayer(t))return!1;const e=this.getLayer(s);return e?(e.name=t,this.currentLayerName===s&&(this.currentLayerName=t),(n=this.onChange)==null||n.call(this),!0):!1}setLayerColor(s,t){var n;const e=this.getLayer(s);return e?(e.color=t,(n=this.onChange)==null||n.call(this),!0):!1}toggleVisibility(s){var e;const t=this.getLayer(s);return t&&(t.visible=!t.visible,(e=this.onChange)==null||e.call(this)),t.visible}setVisibility(s,t){var n;const e=this.getLayer(s);return e?(e.visible=t,(n=this.onChange)==null||n.call(this),!0):!1}toggleLock(s){var e;const t=this.getLayer(s);return t&&(t.locked=!t.locked,(e=this.onChange)==null||e.call(this)),t.locked}setLock(s,t){var n;const e=this.getLayer(s);return e?(e.locked=t,(n=this.onChange)==null||n.call(this),!0):!1}setCurrentLayer(s){var t;return this.hasLayer(s)?(this.currentLayerName=s,(t=this.onChange)==null||t.call(this),!0):!1}getCurrentLayer(){return this.currentLayerName}getCurrentLayerInfo(){return this.getLayer(this.currentLayerName)}getLayer(s){return this.layers.find(t=>t.name===s)}getLayers(){return this.layers}hasLayer(s){return this.layers.some(t=>t.name===s)}isLayerVisible(s){const t=this.getLayer(s);return t?t.visible:!0}isLayerLocked(s){const t=this.getLayer(s);return t?t.locked:!1}getLayerColor(s){const t=this.getLayer(s);return t?t.color:"#FFFFFF"}getLayerEntityCount(s,t){return t.filter(e=>e.layer===s).length}}class Se{constructor(){h(this,"currentTool",null);h(this,"tools",new Map);h(this,"orthoMode",!1);h(this,"snapMode",!1);h(this,"onToolChange",null)}register(s){this.tools.set(s.name,s)}setActiveTool(s){var e;const t=this.tools.get(s);return t?(this.currentTool&&this.currentTool.onDeactivate(),this.currentTool=t,t.onActivate(),(e=this.onToolChange)==null||e.call(this,s),!0):!1}getActiveTool(){return this.currentTool}getActiveToolName(){var s;return((s=this.currentTool)==null?void 0:s.name)??null}getTool(s){return this.tools.get(s)}dispatchMouseDown(s,t,e,n){if(!this.currentTool)return;const i=this.createContext(s,t,e);this.currentTool.onMouseDown(i,n)}dispatchMouseMove(s,t,e,n){if(!this.currentTool)return;const i=this.createContext(s,t,e);this.currentTool.onMouseMove(i,n)}dispatchMouseUp(s,t,e,n){if(!this.currentTool)return;const i=this.createContext(s,t,e);this.currentTool.onMouseUp(i,n)}dispatchKeyDown(s,t,e,n){if(!this.currentTool)return;const i=this.createContext(s,t,e);this.currentTool.onKeyDown(i,n)}drawOverlay(s,t){this.currentTool&&this.currentTool.drawOverlay(s,t)}toggleOrtho(){return this.orthoMode=!this.orthoMode,this.orthoMode}toggleSnap(){return this.snapMode=!this.snapMode,this.snapMode}createContext(s,t,e){return{mouseWorld:s,mouseScreen:t,orthoMode:this.orthoMode,snapMode:this.snapMode,scale:e}}}class R{onActivate(){}onDeactivate(){}onMouseDown(s,t){}onMouseMove(s,t){}onMouseUp(s,t){}onKeyDown(s,t){}drawOverlay(s,t){}}class be extends R{constructor(t,e){super();h(this,"name","select");h(this,"entityManager");h(this,"viewport");h(this,"isDragging",!1);h(this,"dragStartScreen",{x:0,y:0});h(this,"dragCurrentScreen",{x:0,y:0});h(this,"isGripDragging",!1);h(this,"activeGrip",null);h(this,"onSelectionChange",null);this.entityManager=t,this.viewport=e}onActivate(){}onDeactivate(){this.cancelGripDrag(),this.isDragging=!1}onMouseDown(t,e){var o,c;if(e.button!==G.Left)return;const n=5/t.scale,i=this.entityManager.hitTestGripPoint(t.mouseWorld.x,t.mouseWorld.y,n);if(i){this.isGripDragging=!0,this.activeGrip=i;return}const r=this.entityManager.hitTest(t.mouseWorld.x,t.mouseWorld.y,n);if(r.length>0){const l=r[0];e.shiftKey?this.entityManager.toggleSelect(l):this.entityManager.select(l),(o=this.onSelectionChange)==null||o.call(this)}else e.shiftKey||(this.entityManager.clearSelection(),(c=this.onSelectionChange)==null||c.call(this)),this.isDragging=!0,this.dragStartScreen={...t.mouseScreen},this.dragCurrentScreen={...t.mouseScreen}}onMouseMove(t,e){if(this.isGripDragging&&this.activeGrip){this.activeGrip.entity.moveGripPoint(this.activeGrip.gripIndex,t.mouseWorld.x,t.mouseWorld.y),this.activeGrip.point={x:t.mouseWorld.x,y:t.mouseWorld.y};return}this.isDragging&&(this.dragCurrentScreen={...t.mouseScreen})}onMouseUp(t,e){var u;if(this.isGripDragging){this.isGripDragging=!1,this.activeGrip=null;return}if(!this.isDragging)return;this.isDragging=!1;const n=Math.abs(this.dragCurrentScreen.x-this.dragStartScreen.x),i=Math.abs(this.dragCurrentScreen.y-this.dragStartScreen.y);if(n<3&&i<3)return;const r=this.viewport.screenToWorld(this.dragStartScreen.x,this.dragStartScreen.y),o=this.viewport.screenToWorld(this.dragCurrentScreen.x,this.dragCurrentScreen.y),c={minX:Math.min(r.x,o.x),minY:Math.min(r.y,o.y),maxX:Math.max(r.x,o.x),maxY:Math.max(r.y,o.y)},l=this.dragStartScreen.x<this.dragCurrentScreen.x,d=this.entityManager.hitTestBoundingBox(c,l);if(e.shiftKey)for(const f of d)this.entityManager.selectAdd(f);else this.entityManager.selectAll(d);(u=this.onSelectionChange)==null||u.call(this)}onKeyDown(t,e){var n;e.key==="Escape"&&(this.isGripDragging?this.cancelGripDrag():(this.entityManager.clearSelection(),(n=this.onSelectionChange)==null||n.call(this)))}drawOverlay(t){this.isDragging&&this.drawSelectionBox(t),this.isGripDragging&&this.activeGrip&&this.drawActiveGrip(t)}cancelGripDrag(){this.isGripDragging=!1,this.activeGrip=null}drawSelectionBox(t){const e=this.dragStartScreen.x,n=this.dragStartScreen.y,i=this.dragCurrentScreen.x,r=this.dragCurrentScreen.y,o=this.dragStartScreen.x<this.dragCurrentScreen.x;t.strokeStyle=o?"#0078d4":"#d47800",t.fillStyle=o?"rgba(0, 120, 212, 0.1)":"rgba(212, 120, 0, 0.1)",t.lineWidth=1,t.setLineDash(o?[]:[4,4]);const c=Math.min(e,i),l=Math.min(n,r),d=Math.abs(i-e),u=Math.abs(r-n);t.fillRect(c,l,d,u),t.strokeRect(c,l,d,u),t.setLineDash([])}drawActiveGrip(t){if(!this.activeGrip)return;const e=this.viewport.worldToScreen(this.activeGrip.point.x,this.activeGrip.point.y);t.fillStyle="#ff6600",t.strokeStyle="#ffffff",t.lineWidth=2,t.beginPath(),t.rect(e.x-6,e.y-6,12,12),t.fill(),t.stroke()}}class ut{constructor(s,t){h(this,"id");h(this,"type");h(this,"layer");h(this,"color");h(this,"visible");h(this,"locked");this.id=t||this.generateId(),this.type=s,this.layer="0",this.color=null,this.visible=!0,this.locked=!1}generateId(){return"ent_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8)}}class U extends ut{constructor(t,e,n,i,r){super("line",r);h(this,"startX");h(this,"startY");h(this,"endX");h(this,"endY");this.startX=t,this.startY=e,this.endX=n,this.endY=i}getBoundingBox(){return{minX:Math.min(this.startX,this.endX),minY:Math.min(this.startY,this.endY),maxX:Math.max(this.startX,this.endX),maxY:Math.max(this.startY,this.endY)}}getGripPoints(){return[{x:this.startX,y:this.startY},{x:this.endX,y:this.endY},{x:(this.startX+this.endX)/2,y:(this.startY+this.endY)/2}]}draw(t,e,n){const i=e.worldToScreen(this.startX,this.startY),r=e.worldToScreen(this.endX,this.endY);t.strokeStyle=this.color||"#e0e0e0",t.lineWidth=n?2:1,t.beginPath(),t.moveTo(i.x,i.y),t.lineTo(r.x,r.y),t.stroke(),n&&this.drawGripPoints(t,e)}drawGripPoints(t,e){const n=this.getGripPoints();t.fillStyle="#0078d4",t.strokeStyle="#ffffff",t.lineWidth=1;for(const i of n){const r=e.worldToScreen(i.x,i.y);t.beginPath(),t.rect(r.x-4,r.y-4,8,8),t.fill(),t.stroke()}}hitTest(t,e,n){const i=this.endX-this.startX,r=this.endY-this.startY,o=i*i+r*r;if(o===0)return Math.hypot(t-this.startX,e-this.startY)<=n;let c=((t-this.startX)*i+(e-this.startY)*r)/o;c=Math.max(0,Math.min(1,c));const l=this.startX+c*i,d=this.startY+c*r;return Math.hypot(t-l,e-d)<=n}move(t,e){this.startX+=t,this.startY+=e,this.endX+=t,this.endY+=e}moveGripPoint(t,e,n){switch(t){case 0:this.startX=e,this.startY=n;break;case 1:this.endX=e,this.endY=n;break;case 2:{const i=(this.startX+this.endX)/2,r=(this.startY+this.endY)/2,o=e-i,c=n-r;this.move(o,c)}break}}clone(){const t=new U(this.startX,this.startY,this.endX,this.endY);return t.layer=this.layer,t.color=this.color,t.visible=this.visible,t.locked=this.locked,t}getLength(){return Math.hypot(this.endX-this.startX,this.endY-this.startY)}getAngle(){return Math.atan2(this.endY-this.startY,this.endX-this.startX)}}class V extends ut{constructor(t,e,n,i){super("circle",i);h(this,"centerX");h(this,"centerY");h(this,"radius");this.centerX=t,this.centerY=e,this.radius=n}getBoundingBox(){return{minX:this.centerX-this.radius,minY:this.centerY-this.radius,maxX:this.centerX+this.radius,maxY:this.centerY+this.radius}}getGripPoints(){return[{x:this.centerX,y:this.centerY},{x:this.centerX+this.radius,y:this.centerY},{x:this.centerX,y:this.centerY-this.radius},{x:this.centerX-this.radius,y:this.centerY},{x:this.centerX,y:this.centerY+this.radius}]}draw(t,e,n){const i=e.worldToScreen(this.centerX,this.centerY),r=this.radius*e.scale;t.strokeStyle=this.color||"#e0e0e0",t.lineWidth=n?2:1,t.beginPath(),t.arc(i.x,i.y,Math.abs(r),0,Math.PI*2),t.stroke(),n&&this.drawGripPoints(t,e)}drawGripPoints(t,e){const n=this.getGripPoints();t.fillStyle="#0078d4",t.strokeStyle="#ffffff",t.lineWidth=1;for(const i of n){const r=e.worldToScreen(i.x,i.y);t.beginPath(),t.rect(r.x-4,r.y-4,8,8),t.fill(),t.stroke()}}hitTest(t,e,n){const i=Math.hypot(t-this.centerX,e-this.centerY);return Math.abs(i-this.radius)<=n}move(t,e){this.centerX+=t,this.centerY+=e}moveGripPoint(t,e,n){switch(t){case 0:{const i=e-this.centerX,r=n-this.centerY;this.move(i,r)}break;case 1:this.radius=Math.hypot(e-this.centerX,n-this.centerY);break;case 2:this.radius=Math.hypot(e-this.centerX,n-this.centerY);break;case 3:this.radius=Math.hypot(e-this.centerX,n-this.centerY);break;case 4:this.radius=Math.hypot(e-this.centerX,n-this.centerY);break}}clone(){const t=new V(this.centerX,this.centerY,this.radius);return t.layer=this.layer,t.color=this.color,t.visible=this.visible,t.locked=this.locked,t}getCircumference(){return 2*Math.PI*this.radius}getArea(){return Math.PI*this.radius*this.radius}}class I extends ut{constructor(t,e,n,i,r,o=!0,c){super("arc",c);h(this,"centerX");h(this,"centerY");h(this,"radius");h(this,"startAngle");h(this,"endAngle");h(this,"counterclockwise");this.centerX=t,this.centerY=e,this.radius=n,this.startAngle=i,this.endAngle=r,this.counterclockwise=o}getBoundingBox(){const t=[this.startAngle,this.endAngle],e=Math.PI/2;for(let c=0;c<4;c++){const l=e*c;this.isAngleInArc(l)&&t.push(l)}let n=1/0,i=-1/0,r=1/0,o=-1/0;for(const c of t){const l=this.centerX+this.radius*Math.cos(c),d=this.centerY+this.radius*Math.sin(c);l<n&&(n=l),l>i&&(i=l),d<r&&(r=d),d>o&&(o=d)}return{minX:n,minY:r,maxX:i,maxY:o}}getGripPoints(){return[this.getStartPoint(),this.getEndPoint(),this.getMidPoint(),{x:this.centerX,y:this.centerY}]}draw(t,e,n){const i=e.worldToScreen(this.centerX,this.centerY),r=this.radius*e.scale;t.strokeStyle=this.color||"#e0e0e0",t.lineWidth=n?2:1,t.beginPath(),t.arc(i.x,i.y,Math.abs(r),this.startAngle,this.endAngle,this.counterclockwise),t.stroke(),n&&this.drawGripPoints(t,e)}drawGripPoints(t,e){const n=this.getGripPoints();t.fillStyle="#0078d4",t.strokeStyle="#ffffff",t.lineWidth=1;for(const i of n){const r=e.worldToScreen(i.x,i.y);t.beginPath(),t.rect(r.x-4,r.y-4,8,8),t.fill(),t.stroke()}}hitTest(t,e,n){const i=Math.hypot(t-this.centerX,e-this.centerY);if(Math.abs(i-this.radius)>n)return!1;const r=Math.atan2(e-this.centerY,t-this.centerX);return this.isAngleInArc(r)}move(t,e){this.centerX+=t,this.centerY+=e}moveGripPoint(t,e,n){switch(t){case 0:this.radius=Math.hypot(e-this.centerX,n-this.centerY),this.startAngle=Math.atan2(n-this.centerY,e-this.centerX);break;case 1:this.radius=Math.hypot(e-this.centerX,n-this.centerY),this.endAngle=Math.atan2(n-this.centerY,e-this.centerX);break;case 2:this.radius=Math.hypot(e-this.centerX,n-this.centerY);break;case 3:{const i=e-this.centerX,r=n-this.centerY;this.move(i,r)}break}}clone(){const t=new I(this.centerX,this.centerY,this.radius,this.startAngle,this.endAngle,this.counterclockwise);return t.layer=this.layer,t.color=this.color,t.visible=this.visible,t.locked=this.locked,t}getMidPoint(){const t=r=>(r%(2*Math.PI)+2*Math.PI)%(2*Math.PI),e=t(this.startAngle),n=this.getArcAngle();let i;return this.counterclockwise?i=t(e+n/2):i=t(e-n/2),{x:this.centerX+this.radius*Math.cos(i),y:this.centerY+this.radius*Math.sin(i)}}getStartPoint(){return{x:this.centerX+this.radius*Math.cos(this.startAngle),y:this.centerY+this.radius*Math.sin(this.startAngle)}}getEndPoint(){return{x:this.centerX+this.radius*Math.cos(this.endAngle),y:this.centerY+this.radius*Math.sin(this.endAngle)}}getArcAngle(){const t=r=>(r%(2*Math.PI)+2*Math.PI)%(2*Math.PI),e=t(this.startAngle),n=t(this.endAngle);let i;return this.counterclockwise?e>=n?i=e-n:i=e+(2*Math.PI-n):n>=e?i=n-e:i=2*Math.PI-e+n,i}isAngleInArc(t){const e=o=>(o%(2*Math.PI)+2*Math.PI)%(2*Math.PI),n=e(t),i=e(this.startAngle),r=e(this.endAngle);return this.counterclockwise?i>=r?n>=r&&n<=i:n>=r||n<=i:r>=i?n>=i&&n<=r:n>=i||n<=r}static computeArcFromThreePoints(t,e,n){const i=t.x,r=t.y,o=e.x,c=e.y,l=n.x,d=n.y,u=2*(i*(c-d)+o*(d-r)+l*(r-c));if(Math.abs(u)<1e-10)return null;const f=((i*i+r*r)*(c-d)+(o*o+c*c)*(d-r)+(l*l+d*d)*(r-c))/u,p=((i*i+r*r)*(l-o)+(o*o+c*c)*(i-l)+(l*l+d*d)*(o-i))/u,x=Math.hypot(i-f,r-p),m=Math.atan2(r-p,i-f),C=Math.atan2(d-p,l-f),b=(t.x-f)*(n.y-p)-(t.y-p)*(n.x-f);let L,w;return b>0?(L=m,w=C):(L=C,w=m),new I(f,p,x,L,w)}}class it extends R{constructor(t){super();h(this,"name","line");h(this,"startPoint",null);h(this,"previewEnd",null);h(this,"onEntityCreated",null);h(this,"continuousMode",!0);t&&(this.onEntityCreated=t)}setEntityCreatedCallback(t){this.onEntityCreated=t}onActivate(){this.reset()}onDeactivate(){this.reset()}reset(){this.startPoint=null,this.previewEnd=null}onMouseDown(t,e){var i;if(e.button!==G.Left)return;const n=this.applyOrtho(t);if(!this.startPoint)this.startPoint=n;else{const r=new U(this.startPoint.x,this.startPoint.y,n.x,n.y);(i=this.onEntityCreated)==null||i.call(this,r),this.continuousMode?this.startPoint=n:this.reset()}}onMouseMove(t,e){this.startPoint&&(this.previewEnd=this.applyOrtho(t))}onMouseUp(t,e){}onKeyDown(t,e){var n;if(e.key==="Escape"){this.reset();return}if(e.key==="Enter"){if(this.startPoint&&this.previewEnd){const i=new U(this.startPoint.x,this.startPoint.y,this.previewEnd.x,this.previewEnd.y);(n=this.onEntityCreated)==null||n.call(this,i)}this.reset();return}}applyOrtho(t){if(!t.orthoMode||!this.startPoint)return{...t.mouseWorld};const e=t.mouseWorld.x-this.startPoint.x,n=t.mouseWorld.y-this.startPoint.y;return Math.abs(e)>=Math.abs(n)?{x:t.mouseWorld.x,y:this.startPoint.y}:{x:this.startPoint.x,y:t.mouseWorld.y}}drawOverlay(t,e){if(!this.startPoint)return;const n=e.worldToScreen(this.startPoint.x,this.startPoint.y);if(t.fillStyle="#0078d4",t.strokeStyle="#ffffff",t.lineWidth=1,t.beginPath(),t.rect(n.x-4,n.y-4,8,8),t.fill(),t.stroke(),this.previewEnd){const i=e.worldToScreen(this.previewEnd.x,this.previewEnd.y);t.strokeStyle="#0078d4",t.lineWidth=1,t.setLineDash([4,4]),t.beginPath(),t.moveTo(n.x,n.y),t.lineTo(i.x,i.y),t.stroke(),t.setLineDash([]),t.fillStyle="#0078d4",t.beginPath(),t.arc(i.x,i.y,3,0,Math.PI*2),t.fill()}}static parseCommandLine(t){const e=t.trim();if(!e)return null;const n=it.tryParseTwoPoints(e);if(n)return n;const i=e.split(/[\s,]+/);if(i.length===4){const r=i.map(Number);if(r.every(o=>!isNaN(o)))return{start:{x:r[0],y:r[1]},end:{x:r[2],y:r[3]}}}return null}static tryParseTwoPoints(t){const e=t.indexOf(" ");if(e===-1)return null;const n=t.substring(0,e).trim(),i=t.substring(e+1).trim(),r=n.split(",").map(Number);if(r.length!==2||r.some(isNaN))return null;const o={x:r[0],y:r[1]},c=i.startsWith("@"),d=(c?i.substring(1):i).split(",").map(Number);if(d.length!==2||d.some(isNaN))return null;const u=c?{x:o.x+d[0],y:o.y+d[1]}:{x:d[0],y:d[1]};return{start:o,end:u}}}class bt extends R{constructor(t){super();h(this,"name","circle");h(this,"firstPoint",null);h(this,"previewPoint",null);h(this,"onEntityCreated",null);h(this,"drawMode","centerRadius");t&&(this.onEntityCreated=t)}setEntityCreatedCallback(t){this.onEntityCreated=t}setDrawMode(t){this.drawMode=t,this.reset()}getDrawMode(){return this.drawMode}onActivate(){this.reset()}onDeactivate(){this.reset()}reset(){this.firstPoint=null,this.previewPoint=null}onMouseDown(t,e){var i;if(e.button!==G.Left)return;const n={...t.mouseWorld};if(!this.firstPoint)this.firstPoint=n;else{const r=this.createCircleFromPoints(this.firstPoint,n);r&&((i=this.onEntityCreated)==null||i.call(this,r)),this.reset()}}onMouseMove(t,e){this.firstPoint&&(this.previewPoint={...t.mouseWorld})}onMouseUp(t,e){}onKeyDown(t,e){var n;if(e.key==="Escape"){this.reset();return}if(e.key==="Enter"){if(this.firstPoint&&this.previewPoint){const i=this.createCircleFromPoints(this.firstPoint,this.previewPoint);i&&((n=this.onEntityCreated)==null||n.call(this,i))}this.reset();return}}createCircleFromPoints(t,e){if(this.drawMode==="centerRadius"){const n=Math.hypot(e.x-t.x,e.y-t.y);return n<1e-6?null:new V(t.x,t.y,n)}else{const n=(t.x+e.x)/2,i=(t.y+e.y)/2,r=Math.hypot(e.x-t.x,e.y-t.y)/2;return r<1e-6?null:new V(n,i,r)}}drawOverlay(t,e){if(!this.firstPoint)return;const n=e.worldToScreen(this.firstPoint.x,this.firstPoint.y);if(t.fillStyle="#0078d4",t.strokeStyle="#ffffff",t.lineWidth=1,t.beginPath(),t.rect(n.x-4,n.y-4,8,8),t.fill(),t.stroke(),this.previewPoint){const i=e.worldToScreen(this.previewPoint.x,this.previewPoint.y);if(t.strokeStyle="#0078d4",t.lineWidth=1,t.setLineDash([4,4]),this.drawMode==="centerRadius"){const r=Math.hypot(i.x-n.x,i.y-n.y);t.beginPath(),t.arc(n.x,n.y,r,0,Math.PI*2),t.stroke(),t.beginPath(),t.moveTo(n.x,n.y),t.lineTo(i.x,i.y),t.stroke()}else{const r=(n.x+i.x)/2,o=(n.y+i.y)/2,c=Math.hypot(i.x-n.x,i.y-n.y)/2;t.beginPath(),t.arc(r,o,c,0,Math.PI*2),t.stroke(),t.beginPath(),t.moveTo(n.x,n.y),t.lineTo(i.x,i.y),t.stroke()}t.setLineDash([]),t.fillStyle="#0078d4",t.beginPath(),t.arc(i.x,i.y,3,0,Math.PI*2),t.fill()}}static parseCommandLine(t){const e=t.trim().split(/[\s,]+/);if(e.length===3){const n=e.map(Number);if(n.every(i=>!isNaN(i))&&n[2]>0)return{center:{x:n[0],y:n[1]},radius:n[2]}}if(e.length===2){const n=e[0].split(",").map(Number),i=Number(e[1]);if(n.length===2&&n.every(r=>!isNaN(r))&&!isNaN(i)&&i>0)return{center:{x:n[0],y:n[1]},radius:i}}return null}}class Q extends R{constructor(t){super();h(this,"name","arc");h(this,"points",[]);h(this,"previewPoint",null);h(this,"onEntityCreated",null);h(this,"drawMode","threePoint");t&&(this.onEntityCreated=t)}setEntityCreatedCallback(t){this.onEntityCreated=t}setDrawMode(t){this.drawMode=t,this.reset()}getDrawMode(){return this.drawMode}onActivate(){this.reset()}onDeactivate(){this.reset()}reset(){this.points=[],this.previewPoint=null}onMouseDown(t,e){var i,r;if(e.button!==G.Left)return;const n={...t.mouseWorld};if(this.points.push(n),this.drawMode==="threePoint"){if(this.points.length===3){const o=I.computeArcFromThreePoints(this.points[0],this.points[1],this.points[2]);o&&((i=this.onEntityCreated)==null||i.call(this,o)),this.reset()}}else if(this.points.length===3){const o=this.createArcFromCenterMode(this.points[0],this.points[1],this.points[2]);o&&((r=this.onEntityCreated)==null||r.call(this,o)),this.reset()}}onMouseMove(t,e){this.points.length>0&&(this.previewPoint={...t.mouseWorld})}onMouseUp(t,e){}onKeyDown(t,e){var n,i;if(e.key==="Escape"){this.reset();return}if(e.key==="Enter"){if(this.previewPoint){if(this.points.push(this.previewPoint),this.drawMode==="threePoint"&&this.points.length===3){const r=I.computeArcFromThreePoints(this.points[0],this.points[1],this.points[2]);r&&((n=this.onEntityCreated)==null||n.call(this,r))}else if(this.drawMode==="centerStart"&&this.points.length===3){const r=this.createArcFromCenterMode(this.points[0],this.points[1],this.points[2]);r&&((i=this.onEntityCreated)==null||i.call(this,r))}}this.reset();return}}createArcFromCenterMode(t,e,n){const i=Math.hypot(e.x-t.x,e.y-t.y);if(i<1e-6)return null;const r=Math.atan2(e.y-t.y,e.x-t.x),o=Math.atan2(n.y-t.y,n.x-t.x);return new I(t.x,t.y,i,r,o)}drawOverlay(t,e){if(this.points.length===0)return;const n=this.points.map(i=>e.worldToScreen(i.x,i.y));for(const i of n)t.fillStyle="#0078d4",t.strokeStyle="#ffffff",t.lineWidth=1,t.beginPath(),t.rect(i.x-4,i.y-4,8,8),t.fill(),t.stroke();if(this.previewPoint){const i=e.worldToScreen(this.previewPoint.x,this.previewPoint.y);t.strokeStyle="#666666",t.lineWidth=1,t.setLineDash([2,4]);for(const r of n)t.beginPath(),t.moveTo(r.x,r.y),t.lineTo(i.x,i.y),t.stroke();t.setLineDash([])}if(this.previewPoint&&this.points.length>=2){const i=e.worldToScreen(this.previewPoint.x,this.previewPoint.y);let r=null;if(this.drawMode==="threePoint"&&this.points.length>=2)r=I.computeArcFromThreePoints(this.points[0],this.points[1],this.previewPoint);else if(this.drawMode==="centerStart"&&this.points.length>=2){const o=Math.hypot(this.points[1].x-this.points[0].x,this.points[1].y-this.points[0].y);if(o>1e-6){const c=Math.atan2(this.points[1].y-this.points[0].y,this.points[1].x-this.points[0].x),l=Math.atan2(this.previewPoint.y-this.points[0].y,this.previewPoint.x-this.points[0].x);r=new I(this.points[0].x,this.points[0].y,o,c,l)}}if(r){const o=e.worldToScreen(r.centerX,r.centerY),c=e.worldToScreen(r.centerX+r.radius*Math.cos(r.startAngle),r.centerY+r.radius*Math.sin(r.startAngle)),l=Math.hypot(c.x-o.x,c.y-o.y);t.strokeStyle="#0078d4",t.lineWidth=1,t.setLineDash([4,4]),t.beginPath(),t.arc(o.x,o.y,Math.abs(l),r.startAngle,r.endAngle,!0),t.stroke(),t.setLineDash([]),t.fillStyle="#0078d4",t.beginPath(),t.arc(i.x,i.y,3,0,Math.PI*2),t.fill()}}else if(this.previewPoint&&this.points.length===1){const i=e.worldToScreen(this.previewPoint.x,this.previewPoint.y),r=n[0];t.strokeStyle="#0078d4",t.lineWidth=1,t.setLineDash([4,4]),t.beginPath(),t.moveTo(r.x,r.y),t.lineTo(i.x,i.y),t.stroke(),t.setLineDash([]),t.fillStyle="#0078d4",t.beginPath(),t.arc(i.x,i.y,3,0,Math.PI*2),t.fill()}}static parseCommandLine(t){const e=t.trim();if(!e)return null;const n=Q.tryParseThreePoints(e);if(n)return I.computeArcFromThreePoints(n[0],n[1],n[2]);const i=Q.tryParseCenterStartAngle(e);return i||null}static tryParseThreePoints(t){const e=t.trim().split(/[\s,]+/);if(e.length===6){const n=e.map(Number);if(n.every(i=>!isNaN(i)))return[{x:n[0],y:n[1]},{x:n[2],y:n[3]},{x:n[4],y:n[5]}]}if(e.length===3){const n=e.map(i=>i.split(",").map(Number));if(n.length===3&&n.every(i=>i.length===2&&i.every(r=>!isNaN(r))))return[{x:n[0][0],y:n[0][1]},{x:n[1][0],y:n[1][1]},{x:n[2][0],y:n[2][1]}]}return null}static tryParseCenterStartAngle(t){const e=t.trim().split(/[\s,]+/);if(e.length===5){const n=e.map(Number);if(n.every(i=>!isNaN(i))&&!isNaN(n[4])){const i={x:n[0],y:n[1]},r={x:n[2],y:n[3]},o=n[4];if(Math.abs(o)<1e-6)return null;const c=Math.hypot(r.x-i.x,r.y-i.y);if(c<1e-6)return null;const l=Math.atan2(r.y-i.y,r.x-i.x),d=l+o*Math.PI/180;return new I(i.x,i.y,c,l,d)}}return null}}class ke extends R{constructor(t,e){super();h(this,"name","copy");h(this,"entityManager");h(this,"onEntityCreated",null);h(this,"basePoint",null);h(this,"previewPoint",null);h(this,"sourceEntities",[]);this.entityManager=t,e&&(this.onEntityCreated=e)}setEntityCreatedCallback(t){this.onEntityCreated=t}onActivate(){this.reset(),this.sourceEntities=[...this.entityManager.getSelected()]}onDeactivate(){this.reset()}reset(){this.basePoint=null,this.previewPoint=null,this.sourceEntities=[]}onMouseDown(t,e){if(e.button!==G.Left||this.sourceEntities.length===0)return;const n={...t.mouseWorld};this.basePoint?this.executeCopy(n):this.basePoint=n}onMouseMove(t,e){this.basePoint&&(this.previewPoint={...t.mouseWorld})}onMouseUp(t,e){}onKeyDown(t,e){if(e.key==="Escape"){this.reset();return}if(e.key==="Enter"){this.reset();return}}executeCopy(t){var i;if(!this.basePoint)return;const e=t.x-this.basePoint.x,n=t.y-this.basePoint.y;for(const r of this.sourceEntities){const o=r.clone();o.move(e,n),(i=this.onEntityCreated)==null||i.call(this,o)}}drawOverlay(t,e){if(!this.basePoint)return;const n=e.worldToScreen(this.basePoint.x,this.basePoint.y);if(t.fillStyle="#0078d4",t.strokeStyle="#ffffff",t.lineWidth=1,t.beginPath(),t.rect(n.x-4,n.y-4,8,8),t.fill(),t.stroke(),this.previewPoint){const i=e.worldToScreen(this.previewPoint.x,this.previewPoint.y);if(t.strokeStyle="#0078d4",t.lineWidth=1,t.setLineDash([4,4]),t.beginPath(),t.moveTo(n.x,n.y),t.lineTo(i.x,i.y),t.stroke(),t.setLineDash([]),this.sourceEntities.length>0){const r=this.previewPoint.x-this.basePoint.x,o=this.previewPoint.y-this.basePoint.y;t.globalAlpha=.4;for(const c of this.sourceEntities){const l=c.clone();l.move(r,o),l.draw(t,{worldToScreen:(d,u)=>e.worldToScreen(d,u)},!1)}t.globalAlpha=1}}}static parseCommandLine(t){const e=t.trim().split(/[\s,]+/);if(e.length===2){const n=e.map(Number);if(n.every(i=>!isNaN(i)))return{dx:n[0],dy:n[1]}}return null}}class Le extends R{constructor(t){super();h(this,"name","move");h(this,"entityManager");h(this,"basePoint",null);h(this,"previewPoint",null);h(this,"sourceEntities",[]);this.entityManager=t}onActivate(){this.reset(),this.sourceEntities=[...this.entityManager.getSelected()]}onDeactivate(){this.reset()}reset(){this.basePoint=null,this.previewPoint=null,this.sourceEntities=[]}onMouseDown(t,e){if(e.button!==G.Left||this.sourceEntities.length===0)return;const n={...t.mouseWorld};this.basePoint?this.executeMove(n):this.basePoint=n}onMouseMove(t,e){this.basePoint&&(this.previewPoint={...t.mouseWorld})}onMouseUp(t,e){}onKeyDown(t,e){if(e.key==="Escape"){this.reset();return}if(e.key==="Enter"){this.basePoint&&this.previewPoint&&this.executeMove(this.previewPoint),this.reset();return}}executeMove(t){if(!this.basePoint)return;const e=t.x-this.basePoint.x,n=t.y-this.basePoint.y;this.entityManager.moveEntities(this.sourceEntities,e,n),this.basePoint=null,this.previewPoint=null}drawOverlay(t,e){if(!this.basePoint)return;const n=e.worldToScreen(this.basePoint.x,this.basePoint.y);if(t.fillStyle="#0078d4",t.strokeStyle="#ffffff",t.lineWidth=1,t.beginPath(),t.rect(n.x-4,n.y-4,8,8),t.fill(),t.stroke(),this.previewPoint){const i=e.worldToScreen(this.previewPoint.x,this.previewPoint.y);t.strokeStyle="#0078d4",t.lineWidth=1,t.setLineDash([4,4]),t.beginPath(),t.moveTo(n.x,n.y),t.lineTo(i.x,i.y),t.stroke(),t.setLineDash([])}}static parseCommandLine(t){const e=t.trim().split(/[\s,]+/);if(e.length===2){const n=e.map(Number);if(n.every(i=>!isNaN(i)))return{dx:n[0],dy:n[1]}}return null}}function Jt(a,s,t,e){const n=s.x*e.y-s.y*e.x;if(Math.abs(n)<1e-10)return null;const i=t.x-a.x,r=t.y-a.y,o=(i*e.y-r*e.x)/n;return{x:a.x+o*s.x,y:a.y+o*s.y}}function Te(a,s,t){const n={x:a.endX-a.startX,y:a.endY-a.startY},i={x:s.endX-s.startX,y:s.endY-s.startY},r=Math.hypot(n.x,n.y),o=Math.hypot(i.x,i.y);if(r<1e-10||o<1e-10)return null;const c={x:n.x/r,y:n.y/r},l={x:i.x/o,y:i.y/o},d=Jt({x:a.startX,y:a.startY},c,{x:s.startX,y:s.startY},l);if(!d)return null;const u=Math.hypot(a.startX-d.x,a.startY-d.y),p=Math.hypot(a.endX-d.x,a.endY-d.y)>=u?{x:a.endX-d.x,y:a.endY-d.y}:{x:a.startX-d.x,y:a.startY-d.y},x=Math.hypot(s.startX-d.x,s.startY-d.y),C=Math.hypot(s.endX-d.x,s.endY-d.y)>=x?{x:s.endX-d.x,y:s.endY-d.y}:{x:s.startX-d.x,y:s.startY-d.y},b=c.x*p.x+c.y*p.y,L=l.x*C.x+l.y*C.y,w=b<0?{x:-c.x,y:-c.y}:c,E=L<0?{x:-l.x,y:-l.y}:l,ct=Math.abs(w.x*E.x+w.y*E.y),W=Math.acos(Math.min(1,ct));if(W<1e-10||Math.abs(W-Math.PI)<1e-10)return null;const _=t/Math.tan(W/2),K={x:d.x+_*w.x,y:d.y+_*w.y},q={x:d.x+_*E.x,y:d.y+_*E.y},mt=w.x+E.x,vt=w.y+E.y,lt=Math.hypot(mt,vt);if(lt<1e-10)return null;const Mt={x:mt/lt,y:vt/lt},xt=t/Math.sin(W/2),F={x:d.x+xt*Mt.x,y:d.y+xt*Mt.y},ee=Math.atan2(K.y-F.y,K.x-F.x),se=Math.atan2(q.y-F.y,q.x-F.x),ne=K.x-F.x,ie=K.y-F.y,re=q.x-F.x,oe=q.y-F.y,ae=ne*oe-ie*re,ce=ee,le=se,he=ae<0;return{arc:new I(F.x,F.y,t,ce,le,he),t1:K,t2:q}}function kt(a,s,t){const e=Math.hypot(a.startX-t.x,a.startY-t.y),n=Math.hypot(a.endX-t.x,a.endY-t.y);e<=n?(a.startX=s.x,a.startY=s.y):(a.endX=s.x,a.endY=s.y)}class Lt extends R{constructor(t,e){super();h(this,"name","fillet");h(this,"entityManager");h(this,"onEntityCreated",null);h(this,"filletRadius",10);h(this,"edge1",null);h(this,"edge2",null);this.entityManager=t,e&&(this.onEntityCreated=e)}setEntityCreatedCallback(t){this.onEntityCreated=t}onActivate(){this.edge1=null,this.edge2=null}onDeactivate(){this.edge1=null,this.edge2=null}onMouseDown(t,e){if(e.button!==G.Left)return;const n=5/t.scale,i=this.entityManager.hitTest(t.mouseWorld.x,t.mouseWorld.y,n);if(i.length===0)return;const r=i[0];r.type==="line"&&(this.edge1?!this.edge2&&r!==this.edge1&&(this.edge2=r,this.executeFillet()):this.edge1=r)}onMouseMove(t,e){}onMouseUp(t,e){}onKeyDown(t,e){e.key==="Escape"&&(this.edge1=null,this.edge2=null)}drawOverlay(t,e){if(!this.edge1)return;const n=this.edge1.getGripPoints();if(n.length>0){t.strokeStyle="#00ff00",t.lineWidth=2,t.beginPath();const i=e.worldToScreen(n[0].x,n[0].y);t.moveTo(i.x,i.y);for(let r=1;r<n.length;r++){const o=e.worldToScreen(n[r].x,n[r].y);t.lineTo(o.x,o.y)}t.stroke()}}executeFillet(){var e;if(!this.edge1||!this.edge2)return;const t=this.filletTwoEdges(this.edge1,this.edge2);if(!t){this.edge1=null,this.edge2=null;return}(e=this.onEntityCreated)==null||e.call(this,t.arc),this.edge1=null,this.edge2=null}filletTwoEdges(t,e){return t.type==="line"&&e.type==="line"?this.filletLineLine(t,e):null}filletLineLine(t,e){const n=this.filletRadius;if(n<=0)return null;const i=Te(t,e,n);if(!i)return null;const r={x:t.endX-t.startX,y:t.endY-t.startY},o={x:e.endX-e.startX,y:e.endY-e.startY},c=Jt({x:t.startX,y:t.startY},r,{x:e.startX,y:e.startY},o);return c&&(kt(t,i.t1,c),kt(e,i.t2,c)),{arc:i.arc}}setRadius(t){this.filletRadius=Math.max(.01,t)}getRadius(){return this.filletRadius}static parseCommandLine(t){const e=t.trim().toUpperCase();if(!e)return null;const n=e.match(/^R\s+([0-9]*\.?[0-9]+)$/);if(n){const i=parseFloat(n[1]);if(i>0&&isFinite(i))return{radius:i}}return null}}function Qt(a,s,t,e){const n=s.x*e.y-s.y*e.x;if(Math.abs(n)<1e-10)return null;const i=t.x-a.x,r=t.y-a.y,o=(i*e.y-r*e.x)/n;return{x:a.x+o*s.x,y:a.y+o*s.y}}function Pe(a,s,t,e){const i={x:a.endX-a.startX,y:a.endY-a.startY},r={x:s.endX-s.startX,y:s.endY-s.startY},o=Math.hypot(i.x,i.y),c=Math.hypot(r.x,r.y);if(o<1e-10||c<1e-10)return null;const l={x:i.x/o,y:i.y/o},d={x:r.x/c,y:r.y/c},u=Qt({x:a.startX,y:a.startY},l,{x:s.startX,y:s.startY},d);if(!u)return null;const f=Math.abs(l.x*d.x+l.y*d.y),p=Math.acos(Math.min(1,f));if(p<1e-10||Math.abs(p-Math.PI)<1e-10)return null;const x=Math.hypot(a.startX-u.x,a.startY-u.y),m=Math.hypot(a.endX-u.x,a.endY-u.y),C=x<=m?{x:l.x,y:l.y}:{x:-l.x,y:-l.y},b=Math.hypot(s.startX-u.x,s.startY-u.y),L=Math.hypot(s.endX-u.x,s.endY-u.y),w=b<=L?{x:d.x,y:d.y}:{x:-d.x,y:-d.y},E={x:u.x+t*C.x,y:u.y+t*C.y},ct={x:u.x+e*w.x,y:u.y+e*w.y};return{p1:E,p2:ct}}function Tt(a,s,t){const e=Math.hypot(a.startX-t.x,a.startY-t.y),n=Math.hypot(a.endX-t.x,a.endY-t.y);e<=n?(a.startX=s.x,a.startY=s.y):(a.endX=s.x,a.endY=s.y)}class Pt extends R{constructor(t,e){super();h(this,"name","chamfer");h(this,"entityManager");h(this,"onEntityCreated",null);h(this,"chamferDist1",10);h(this,"chamferDist2",10);h(this,"edge1",null);h(this,"edge2",null);this.entityManager=t,e&&(this.onEntityCreated=e)}setEntityCreatedCallback(t){this.onEntityCreated=t}onActivate(){this.edge1=null,this.edge2=null}onDeactivate(){this.edge1=null,this.edge2=null}onMouseDown(t,e){if(e.button!==G.Left)return;const n=5/t.scale,i=this.entityManager.hitTest(t.mouseWorld.x,t.mouseWorld.y,n);if(i.length===0)return;const r=i[0];r.type==="line"&&(this.edge1?!this.edge2&&r!==this.edge1&&(this.edge2=r,this.executeChamfer()):this.edge1=r)}onMouseMove(t,e){}onMouseUp(t,e){}onKeyDown(t,e){e.key==="Escape"&&(this.edge1=null,this.edge2=null)}drawOverlay(t,e){if(!this.edge1)return;const n=this.edge1.getGripPoints();if(n.length>0){t.strokeStyle="#00ff00",t.lineWidth=2,t.beginPath();const i=e.worldToScreen(n[0].x,n[0].y);t.moveTo(i.x,i.y);for(let r=1;r<n.length;r++){const o=e.worldToScreen(n[r].x,n[r].y);t.lineTo(o.x,o.y)}t.stroke()}}executeChamfer(){var e;if(!this.edge1||!this.edge2)return;const t=this.chamferTwoEdges(this.edge1,this.edge2);if(!t){this.edge1=null,this.edge2=null;return}(e=this.onEntityCreated)==null||e.call(this,t.line),this.edge1=null,this.edge2=null}chamferTwoEdges(t,e){return t.type==="line"&&e.type==="line"?this.chamferLineLine(t,e):null}chamferLineLine(t,e){const n=this.chamferDist1,i=this.chamferDist2;if(n<=0||i<=0)return null;const r=Pe(t,e,n,i);if(!r)return null;const o={x:t.endX-t.startX,y:t.endY-t.startY},c={x:e.endX-e.startX,y:e.endY-e.startY},l=Qt({x:t.startX,y:t.startY},o,{x:e.startX,y:e.startY},c);return l&&(Tt(t,r.p1,l),Tt(e,r.p2,l)),{line:new U(r.p1.x,r.p1.y,r.p2.x,r.p2.y)}}setDistance(t){this.chamferDist1=Math.max(.01,t),this.chamferDist2=Math.max(.01,t)}setDistance1(t){this.chamferDist1=Math.max(.01,t)}setDistance2(t){this.chamferDist2=Math.max(.01,t)}getDistances(){return{dist1:this.chamferDist1,dist2:this.chamferDist2}}static parseCommandLine(t){const e=t.trim().toUpperCase();if(!e)return null;const n=e.match(/^D\s+([0-9]*\.?[0-9]+)$/);if(n){const l=parseFloat(n[1]);if(l>0&&isFinite(l))return{dist:l}}const i=e.match(/^D1\s+([0-9]*\.?[0-9]+)\s+D2\s+([0-9]*\.?[0-9]+)$/);if(i){const l=parseFloat(i[1]),d=parseFloat(i[2]);if(l>0&&isFinite(l)&&d>0&&isFinite(d))return{dist1:l,dist2:d}}const r=e.match(/^D2\s+([0-9]*\.?[0-9]+)\s+D1\s+([0-9]*\.?[0-9]+)$/);if(r){const l=parseFloat(r[1]),d=parseFloat(r[2]);if(d>0&&isFinite(d)&&l>0&&isFinite(l))return{dist1:d,dist2:l}}const o=e.match(/^D1\s+([0-9]*\.?[0-9]+)$/);if(o){const l=parseFloat(o[1]);if(l>0&&isFinite(l))return{dist1:l}}const c=e.match(/^D2\s+([0-9]*\.?[0-9]+)$/);if(c){const l=parseFloat(c[1]);if(l>0&&isFinite(l))return{dist2:l}}return null}}function Ae(a,s,t,e){const n=s.x*e.y-s.y*e.x;if(Math.abs(n)<1e-10)return null;const i=t.x-a.x,r=t.y-a.y,o=(i*e.y-r*e.x)/n;return{x:a.x+o*s.x,y:a.y+o*s.y}}function At(a,s,t,e){const i=s.x,r=s.y,o=a.x-t.x,c=a.y-t.y,l=i*i+r*r;if(l<1e-10)return[];const d=2*(o*i+c*r),u=o*o+c*c-e*e,f=d*d-4*l*u;if(f<-1e-10)return[];if(f<0)return[];const p=Math.sqrt(Math.max(0,f)),x=[],m=(-d+p)/(2*l);if(x.push({x:a.x+m*i,y:a.y+m*r}),p>1e-10){const C=(-d-p)/(2*l);x.push({x:a.x+C*i,y:a.y+C*r})}return x}class Ye extends R{constructor(t){super();h(this,"name","extend");h(this,"entityManager");h(this,"boundary",null);this.entityManager=t}onActivate(){this.boundary=null}onDeactivate(){this.boundary=null}onMouseDown(t,e){if(e.button!==G.Left)return;const n=5/t.scale,i=this.entityManager.hitTest(t.mouseWorld.x,t.mouseWorld.y,n);if(i.length===0)return;const r=i[0];this.boundary?r!==this.boundary&&this.executeExtend(r):this.boundary=r}onMouseMove(t,e){}onMouseUp(t,e){}onKeyDown(t,e){e.key==="Escape"&&(this.boundary=null)}drawOverlay(t,e){if(!this.boundary)return;const n=this.boundary.getGripPoints();if(n.length>0){t.strokeStyle="#00ff00",t.lineWidth=2,t.beginPath();const i=e.worldToScreen(n[0].x,n[0].y);t.moveTo(i.x,i.y);for(let r=1;r<n.length;r++){const o=e.worldToScreen(n[r].x,n[r].y);t.lineTo(o.x,o.y)}t.stroke()}}executeExtend(t){this.boundary&&(t.type==="line"?this.extendLine(t,this.boundary):t.type==="arc"&&this.extendArc(t,this.boundary),this.boundary=null)}extendLine(t,e){const n=[{x:t.startX,y:t.startY},{x:t.endX,y:t.endY}];let i=0,r=1/0;for(let c=0;c<2;c++){const l=this.pointToEntityDistance(n[c],e);l<r&&(r=l,i=c)}const o=n[i];if(e.type==="line")this.extendLineToLine(t,i,e);else if(e.type==="circle"||e.type==="arc"){const c=e.type==="circle"?{x:e.centerX,y:e.centerY}:{x:e.centerX,y:e.centerY},l=(e.type==="circle",e.radius),d={x:t.endX-t.startX,y:t.endY-t.startY},u=At(o,d,c,l);if(u.length===0)return;let f=u;if(e.type==="arc"){const m=e;f=u.filter(C=>this.isPointOnArc(C,m))}if(f.length===0)return;let p=f[0],x=Math.hypot(p.x-o.x,p.y-o.y);for(let m=1;m<f.length;m++){const C=Math.hypot(f[m].x-o.x,f[m].y-o.y);C<x&&(x=C,p=f[m])}i===0?(t.startX=p.x,t.startY=p.y):(t.endX=p.x,t.endY=p.y)}}extendLineToLine(t,e,n){const i={x:t.endX-t.startX,y:t.endY-t.startY},r={x:n.endX-n.startX,y:n.endY-n.startY},o=Ae({x:t.startX,y:t.startY},i,{x:n.startX,y:n.startY},r);o&&(e===0?(t.startX=o.x,t.startY=o.y):(t.endX=o.x,t.endY=o.y))}extendArc(t,e){const n=t.getStartPoint(),i=t.getEndPoint(),r=this.pointToEntityDistance(n,e),o=this.pointToEntityDistance(i,e),c=r<=o;if(e.type==="line")this.extendArcToLine(t,c,e);else if(e.type==="circle"||e.type==="arc"){const l=e.type==="circle"?{x:e.centerX,y:e.centerY}:{x:e.centerX,y:e.centerY},d=(e.type==="circle",e.radius),u=this.circleCircleIntersections({x:t.centerX,y:t.centerY},t.radius,l,d);if(u.length===0)return;let f=u;if(e.type==="arc"){const b=e;f=u.filter(L=>this.isPointOnArc(L,b))}if(f.length===0)return;const p=c?n:i;let x=f[0],m=Math.hypot(x.x-p.x,x.y-p.y);for(let b=1;b<f.length;b++){const L=Math.hypot(f[b].x-p.x,f[b].y-p.y);L<m&&(m=L,x=f[b])}const C=Math.atan2(x.y-t.centerY,x.x-t.centerX);c?t.startAngle=C:t.endAngle=C}}extendArcToLine(t,e,n){const i={x:n.endX-n.startX,y:n.endY-n.startY},r=At({x:n.startX,y:n.startY},i,{x:t.centerX,y:t.centerY},t.radius);if(r.length===0)return;const o=e?t.getStartPoint():t.getEndPoint();let c=r[0],l=Math.hypot(c.x-o.x,c.y-o.y);for(let u=1;u<r.length;u++){const f=Math.hypot(r[u].x-o.x,r[u].y-o.y);f<l&&(l=f,c=r[u])}const d=Math.atan2(c.y-t.centerY,c.x-t.centerX);e?t.startAngle=d:t.endAngle=d}circleCircleIntersections(t,e,n,i){const o=n.x-t.x,c=n.y-t.y,l=Math.hypot(o,c);if(l<1e-10)return[];if(l>e+i+1e-10)return[];if(l<Math.abs(e-i)-1e-10)return[];const d=(e*e-i*i+l*l)/(2*l),u=e*e-d*d;if(u<-1e-10)return[];const f=Math.sqrt(Math.max(0,u)),p=t.x+d*(o/l),x=t.y+d*(c/l),m=[{x:p+f*(c/l),y:x-f*(o/l)}];return f>1e-10&&m.push({x:p-f*(c/l),y:x+f*(o/l)}),m}isPointOnArc(t,e){const n=Math.atan2(t.y-e.centerY,t.x-e.centerX),i=l=>(l%(2*Math.PI)+2*Math.PI)%(2*Math.PI),r=i(n),o=i(e.startAngle),c=i(e.endAngle);return o<=c?r>=o&&r<=c:r>=o||r<=c}pointToEntityDistance(t,e){if(e.type==="line"){const n=e;return this.pointToSegmentDistance(t,{x:n.startX,y:n.startY},{x:n.endX,y:n.endY})}else if(e.type==="circle"){const n=e,i=Math.hypot(t.x-n.centerX,t.y-n.centerY);return Math.abs(i-n.radius)}else if(e.type==="arc"){const n=e,i=Math.hypot(t.x-n.centerX,t.y-n.centerY),r=Math.abs(i-n.radius);if(this.isPointOnArc(t,n))return r;const o=n.getStartPoint(),c=n.getEndPoint();return Math.min(Math.hypot(t.x-o.x,t.y-o.y),Math.hypot(t.x-c.x,t.y-c.y))}return 1/0}pointToSegmentDistance(t,e,n){const i=n.x-e.x,r=n.y-e.y,o=i*i+r*r;if(o===0)return Math.hypot(t.x-e.x,t.y-e.y);let c=((t.x-e.x)*i+(t.y-e.y)*r)/o;c=Math.max(0,Math.min(1,c));const l=e.x+c*i,d=e.y+c*r;return Math.hypot(t.x-l,t.y-d)}static parseCommandLine(t){return t.trim()===""}}const ht={1:"#FF0000",2:"#FFFF00",3:"#00FF00",4:"#00FFFF",5:"#0000FF",6:"#FF00FF",7:"#FFFFFF"};class Y{static parse(s){const t=Y.tokenize(s),e=Y.extractVersion(t),n=Y.extractLayers(t);return{entities:Y.extractEntities(t,n),layers:n,version:e}}static tokenize(s){var n;const t=s.split(/\r?\n/),e=[];for(let i=0;i<t.length-1;i+=2){const r=parseInt(t[i].trim(),10),o=((n=t[i+1])==null?void 0:n.trim())??"";isNaN(r)||e.push({code:r,value:o})}return e}static extractVersion(s){let t=!1;for(let e=0;e<s.length;e++){if(s[e].code===2&&s[e].value==="HEADER"){t=!0;continue}if(t&&s[e].code===9&&s[e].value==="$ACADVER"&&e+1<s.length&&s[e+1].code===1)return s[e+1].value;if(t&&s[e].code===0&&s[e].value==="ENDSEC")break}return"AC1015"}static extractLayers(s){const t=[];let e=!1,n=!1,i=null;for(let r=0;r<s.length;r++){const o=s[r];if(o.code===0&&o.value==="SECTION"&&r+1<s.length&&s[r+1].value==="TABLES"){e=!0;continue}if(e){if(o.code===0&&o.value==="TABLE"&&r+1<s.length&&s[r+1].value==="LAYER"){n=!0;continue}if(n&&o.code===0&&o.value==="LAYER"){i!=null&&i.name&&t.push({name:i.name,color:i.color??null,visible:i.visible??!0,locked:i.locked??!1}),i={name:"0",visible:!0,locked:!1};continue}if(n&&i){if(o.code===2)i.name=o.value;else if(o.code===62){const c=parseInt(o.value,10);c<0?(i.visible=!1,i.color=ht[Math.abs(c)]??null):i.color=ht[c]??null}else if(o.code===70){const c=parseInt(o.value,10);i.locked=(c&4)!==0}}if(n&&o.code===0&&o.value==="ENDTAB"){i!=null&&i.name&&t.push({name:i.name,color:i.color??null,visible:i.visible??!0,locked:i.locked??!1}),i=null,n=!1;continue}if(o.code===0&&o.value==="ENDSEC"&&e){i!=null&&i.name&&t.push({name:i.name,color:i.color??null,visible:i.visible??!0,locked:i.locked??!1});break}}}return t.length===0&&t.push({name:"0",color:"#FFFFFF",visible:!0,locked:!1}),t}static extractEntities(s,t){const e=[];let n=!1;const i=new Map;for(const r of t)i.set(r.name,r.color);for(let r=0;r<s.length;r++){const o=s[r];if(o.code===0&&o.value==="SECTION"&&r+1<s.length&&s[r+1].value==="ENTITIES"){n=!0;continue}if(n&&o.code===0){const c=o.value;let l=null;switch(c){case"LINE":l=Y.parseLine(s,r,i);break;case"CIRCLE":l=Y.parseCircle(s,r,i);break;case"ARC":l=Y.parseArc(s,r,i);break;case"ENDSEC":return e}l&&e.push(l)}}return e}static parseLine(s,t,e){let n=0,i=0,r=0,o=0,c="0",l=-1;for(let u=t+1;u<s.length;u++){const f=s[u];if(f.code===0)break;switch(f.code){case 8:c=f.value;break;case 62:l=parseInt(f.value,10);break;case 10:n=parseFloat(f.value);break;case 20:i=parseFloat(f.value);break;case 11:r=parseFloat(f.value);break;case 21:o=parseFloat(f.value);break}}const d=new U(n,i,r,o);return d.layer=c,d.color=Y.resolveColor(l,c,e),d}static parseCircle(s,t,e){let n=0,i=0,r=0,o="0",c=-1;for(let d=t+1;d<s.length;d++){const u=s[d];if(u.code===0)break;switch(u.code){case 8:o=u.value;break;case 62:c=parseInt(u.value,10);break;case 10:n=parseFloat(u.value);break;case 20:i=parseFloat(u.value);break;case 40:r=parseFloat(u.value);break}}if(r<=0)return null;const l=new V(n,i,r);return l.layer=o,l.color=Y.resolveColor(c,o,e),l}static parseArc(s,t,e){let n=0,i=0,r=0,o=0,c=0,l="0",d=-1;for(let x=t+1;x<s.length;x++){const m=s[x];if(m.code===0)break;switch(m.code){case 8:l=m.value;break;case 62:d=parseInt(m.value,10);break;case 10:n=parseFloat(m.value);break;case 20:i=parseFloat(m.value);break;case 40:r=parseFloat(m.value);break;case 50:o=parseFloat(m.value);break;case 51:c=parseFloat(m.value);break}}if(r<=0)return null;const u=o*Math.PI/180,f=c*Math.PI/180,p=new I(n,i,r,u,f);return p.layer=l,p.color=Y.resolveColor(d,l,e),p}static resolveColor(s,t,e){return s>0?ht[s]??null:e.get(t)??null}}const Yt={"#FF0000":1,"#FFFF00":2,"#00FF00":3,"#00FFFF":4,"#0000FF":5,"#FF00FF":6,"#FFFFFF":7};class y{static export(s,t){const e=[],n=t??y.deriveLayers(s);return y.writeHeader(e),y.writeTables(e,n),y.writeEntities(e,s),y.writeGroup(e,0,"EOF"),e.join(`
+`)}static deriveLayers(s){const t=new Set;for(const e of s)t.add(e.layer||"0");return t.add("0"),Array.from(t).map(e=>({name:e,color:"#FFFFFF",visible:!0,locked:!1}))}static writeHeader(s){y.writeGroup(s,0,"SECTION"),y.writeGroup(s,2,"HEADER"),y.writeGroup(s,9,"$ACADVER"),y.writeGroup(s,1,"AC1015"),y.writeGroup(s,9,"$INSBASE"),y.writeGroup(s,10,"0.0"),y.writeGroup(s,20,"0.0"),y.writeGroup(s,30,"0.0"),y.writeGroup(s,9,"$EXTMIN"),y.writeGroup(s,10,"-1000.0"),y.writeGroup(s,20,"-1000.0"),y.writeGroup(s,9,"$EXTMAX"),y.writeGroup(s,10,"1000.0"),y.writeGroup(s,20,"1000.0"),y.writeGroup(s,0,"ENDSEC")}static writeTables(s,t){var e;y.writeGroup(s,0,"SECTION"),y.writeGroup(s,2,"TABLES"),y.writeGroup(s,0,"TABLE"),y.writeGroup(s,2,"LAYER"),y.writeGroup(s,70,String(t.length+10));for(const n of t){y.writeGroup(s,0,"LAYER"),y.writeGroup(s,2,n.name);const i=Yt[((e=n.color)==null?void 0:e.toUpperCase())??""]??7,r=n.visible?i:-i;y.writeGroup(s,62,String(r)),y.writeGroup(s,6,"CONTINUOUS");let o=0;n.locked&&(o|=4),y.writeGroup(s,70,String(o))}y.writeGroup(s,0,"ENDTAB"),y.writeGroup(s,0,"TABLE"),y.writeGroup(s,2,"LTYPE"),y.writeGroup(s,70,"1"),y.writeGroup(s,0,"LTYPE"),y.writeGroup(s,2,"CONTINUOUS"),y.writeGroup(s,70,"0"),y.writeGroup(s,3,"Solid line"),y.writeGroup(s,72,"65"),y.writeGroup(s,73,"0"),y.writeGroup(s,40,"0.0"),y.writeGroup(s,0,"ENDTAB"),y.writeGroup(s,0,"ENDSEC")}static writeEntities(s,t){y.writeGroup(s,0,"SECTION"),y.writeGroup(s,2,"ENTITIES");for(const e of t)if(e.visible)switch(e.type){case"line":y.writeLine(s,e);break;case"circle":y.writeCircle(s,e);break;case"arc":y.writeArc(s,e);break}y.writeGroup(s,0,"ENDSEC")}static writeLine(s,t){y.writeGroup(s,0,"LINE"),y.writeEntityCommon(s,t),y.writeGroup(s,10,y.fmt(t.startX)),y.writeGroup(s,20,y.fmt(t.startY)),y.writeGroup(s,30,"0.0"),y.writeGroup(s,11,y.fmt(t.endX)),y.writeGroup(s,21,y.fmt(t.endY)),y.writeGroup(s,31,"0.0")}static writeCircle(s,t){y.writeGroup(s,0,"CIRCLE"),y.writeEntityCommon(s,t),y.writeGroup(s,10,y.fmt(t.centerX)),y.writeGroup(s,20,y.fmt(t.centerY)),y.writeGroup(s,30,"0.0"),y.writeGroup(s,40,y.fmt(t.radius))}static writeArc(s,t){y.writeGroup(s,0,"ARC"),y.writeEntityCommon(s,t),y.writeGroup(s,10,y.fmt(t.centerX)),y.writeGroup(s,20,y.fmt(t.centerY)),y.writeGroup(s,30,"0.0"),y.writeGroup(s,40,y.fmt(t.radius));const e=t.startAngle*180/Math.PI,n=t.endAngle*180/Math.PI;y.writeGroup(s,50,y.fmt(e)),y.writeGroup(s,51,y.fmt(n))}static writeEntityCommon(s,t){if(y.writeGroup(s,8,t.layer||"0"),t.color){const e=Yt[t.color.toUpperCase()];e&&y.writeGroup(s,62,String(e))}}static writeGroup(s,t,e){s.push(String(t)),s.push(e)}static fmt(s){return s.toFixed(6).replace(/\.?0+$/,"")||"0"}}class Ie{constructor(s){h(this,"container");h(this,"canvas");h(this,"viewport");h(this,"renderer");h(this,"statusBar",null);h(this,"entityManager");h(this,"layerManager");h(this,"toolManager");h(this,"options");h(this,"handleResize",()=>{this.renderer.resize()});if(typeof s.container=="string"){const n=document.querySelector(s.container);if(!n)throw new Error(`容器元素未找到: ${s.container}`);this.container=n}else this.container=s.container;this.options={container:this.container,width:s.width??"100%",height:s.height??"100%",showGrid:s.showGrid??!0,showAxes:s.showAxes??!0,backgroundColor:s.backgroundColor??"#1e1e1e",gridColor:s.gridColor??"#2a2a2a",gridMajorColor:s.gridMajorColor??"#3a3a3a"};const{canvas:t,statusBar:e}=this.createDOM();this.canvas=t,this.statusBar=e,this.viewport=new ge(this.canvas),this.entityManager=new Ce,this.layerManager=new Ee,this.entityManager.setLayerManager(this.layerManager),this.renderer=new me(this.canvas,this.viewport,{showGrid:this.options.showGrid,showAxes:this.options.showAxes,backgroundColor:this.options.backgroundColor,gridColor:this.options.gridColor,gridMajorColor:this.options.gridMajorColor,entityManager:this.entityManager}),this.renderer.setLayerManager(this.layerManager),this.toolManager=new Se,this.setupTools(),this.viewport.onUpdate=()=>this.updateStatusBar(),this.bindToolEvents(),this.handleResize(),window.addEventListener("resize",this.handleResize),this.renderer.resize(),this.renderer.start(),this.updateStatusBar()}createDOM(){this.container.style.position="relative",this.container.style.overflow="hidden",this.container.style.backgroundColor=this.options.backgroundColor;const s=document.createElement("canvas");s.style.width=typeof this.options.width=="number"?`${this.options.width}px`:this.options.width,s.style.height=typeof this.options.height=="number"?`${this.options.height}px`:this.options.height,s.style.display="block",s.tabIndex=0,s.style.cursor="crosshair",this.container.appendChild(s);const t=document.createElement("div");return t.style.cssText=`
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 24px;
+      background: #2d2d2d;
+      color: #999;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px;
+      line-height: 24px;
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      user-select: none;
+      border-top: 1px solid #3a3a3a;
+    `,this.container.appendChild(t),{canvas:s,statusBar:t}}setupTools(){const s=u=>{u.layer=this.layerManager.getCurrentLayer()},t=new be(this.entityManager,this.viewport);this.toolManager.register(t);const e=new it(u=>{s(u),this.entityManager.add(u)});this.toolManager.register(e);const n=new bt(u=>{s(u),this.entityManager.add(u)});this.toolManager.register(n);const i=new Q(u=>{s(u),this.entityManager.add(u)});this.toolManager.register(i);const r=new ke(this.entityManager,u=>{s(u),this.entityManager.add(u)});this.toolManager.register(r);const o=new Le(this.entityManager);this.toolManager.register(o);const c=new Lt(this.entityManager,u=>{s(u),this.entityManager.add(u)});this.toolManager.register(c);const l=new Pt(this.entityManager,u=>{s(u),this.entityManager.add(u)});this.toolManager.register(l);const d=new Ye(this.entityManager);this.toolManager.register(d),this.toolManager.setActiveTool("select"),this.renderer.setOverlayRenderer(u=>{this.toolManager.drawOverlay(u,this.viewport)})}bindToolEvents(){this.canvas.addEventListener("mousedown",s=>{const{mouseWorld:t,mouseScreen:e,scale:n}=this.viewport;this.toolManager.dispatchMouseDown(t,e,n,s)}),this.canvas.addEventListener("mousemove",s=>{const{mouseWorld:t,mouseScreen:e,scale:n}=this.viewport;this.toolManager.dispatchMouseMove(t,e,n,s)}),this.canvas.addEventListener("mouseup",s=>{const{mouseWorld:t,mouseScreen:e,scale:n}=this.viewport;this.toolManager.dispatchMouseUp(t,e,n,s)}),this.canvas.addEventListener("keydown",s=>{const{mouseWorld:t,mouseScreen:e,scale:n}=this.viewport;this.toolManager.dispatchKeyDown(t,e,n,s)})}updateStatusBar(){if(!this.statusBar)return;const{mouseWorld:s,scale:t}=this.viewport,e=this.renderer.fps,n=this.toolManager.getActiveToolName()||"无",i=this.toolManager.orthoMode?"正交":"",r=this.toolManager.snapMode?"捕捉":"",o=this.entityManager.getCount(),c=this.entityManager.getSelectedCount(),l=this.layerManager.getCurrentLayer();let d=`
+      <span>X: ${Ct(s.x)}</span>
+      <span>Y: ${Ct(s.y)}</span>
+      <span>缩放: ${(t*100).toFixed(0)}%</span>
+      <span>FPS: ${e}</span>
+      <span>工具: ${n}</span>
+    `;i&&(d+=`<span style="color: #0078d4">${i}</span>`),r&&(d+=`<span style="color: #0078d4">${r}</span>`),d+=`
+      <span>图层: ${l}</span>
+      <span>图元: ${o}</span>
+    `,c>0&&(d+=`<span style="color: #0078d4">选中: ${c}</span>`),this.statusBar.innerHTML=d}getViewport(){return this.viewport}getRenderer(){return this.renderer}getCanvas(){return this.canvas}getEntityManager(){return this.entityManager}getToolManager(){return this.toolManager}getLayerManager(){return this.layerManager}executeCommand(s){const t=s.trim();if(!t)return!1;const e=t.indexOf(" "),n=(e===-1?t:t.substring(0,e)).toUpperCase(),i=e===-1?"":t.substring(e+1).trim();switch(n){case"LINE":case"L":{const r=it.parseCommandLine(i);if(r){const o=new U(r.start.x,r.start.y,r.end.x,r.end.y);return this.entityManager.add(o),!0}return this.toolManager.setActiveTool("line"),!0}case"CIRCLE":case"C":{const r=bt.parseCommandLine(i);if(r){const o=new V(r.center.x,r.center.y,r.radius);return this.entityManager.add(o),!0}return this.toolManager.setActiveTool("circle"),!0}case"ARC":case"A":{const r=Q.parseCommandLine(i);return r?(this.entityManager.add(r),!0):(this.toolManager.setActiveTool("arc"),!0)}case"SELECT":case"SEL":return this.toolManager.setActiveTool("select"),!0;case"COPY":case"CO":return this.toolManager.setActiveTool("copy"),!0;case"MOVE":case"M":return this.toolManager.setActiveTool("move"),!0;case"FILLET":case"F":{const r=Lt.parseCommandLine(i);if(r){const o=this.toolManager.getTool("fillet");return o&&o.setRadius(r.radius),!0}return this.toolManager.setActiveTool("fillet"),!0}case"CHAMFER":case"CHA":{const r=Pt.parseCommandLine(i);if(r){const o=this.toolManager.getTool("chamfer");return o&&(r.dist!==void 0?o.setDistance(r.dist):(r.dist1!==void 0&&o.setDistance1(r.dist1),r.dist2!==void 0&&o.setDistance2(r.dist2))),!0}return this.toolManager.setActiveTool("chamfer"),!0}case"EXTEND":case"EX":return this.toolManager.setActiveTool("extend"),!0;case"ERASE":{const r=i.toUpperCase();return r==="ALL"?(this.entityManager.getCount()===0||confirm(`确定要删除全部 ${this.entityManager.getCount()} 个图元？`)&&this.entityManager.clear(),!0):r==="U"||r==="UNDO"?this.entityManager.undo():(this.entityManager.eraseSelected(),!0)}case"E":return this.entityManager.eraseSelected(),!0;case"OPEN":return!0;case"SAVE":return!0;case"LAYER":case"LA":return this.executeLayerCommand(i);default:return!1}}executeLayerCommand(s){if(!s)return!0;const t=s.trim().split(/\s+/);switch(t[0].toUpperCase()){case"NEW":case"N":{const n=t[1];if(!n)return!1;const i=t[2]||"#FFFFFF";return this.layerManager.addLayer(n,i)!==null}case"DEL":case"D":{const n=t[1];return n?this.layerManager.removeLayer(n):!1}case"SET":case"S":{const n=t[1];return n?this.layerManager.setCurrentLayer(n):!1}default:return!1}}zoomExtents(){const s=this.renderer.getSize();this.viewport.fitBounds(-100,-100,100,100,s.width,s.height)}loadDXF(s){const t=Y.parse(s);for(const e of t.layers){this.layerManager.hasLayer(e.name)||this.layerManager.addLayer(e.name,e.color||"#FFFFFF");const n=this.layerManager.getLayer(e.name);n&&(n.visible=e.visible,n.locked=e.locked,e.color&&(n.color=e.color))}if(t.entities.length>0&&(this.entityManager.clear(),this.entityManager.addAll(t.entities)),t.entities.length>0){const e=this.computeEntitiesBounds();if(e){const n=this.renderer.getSize();this.viewport.fitBounds(e.minX,e.minY,e.maxX,e.maxY,n.width,n.height)}}return t}saveDXF(){const s=this.layerManager.getLayers().map(t=>({name:t.name,color:t.color,visible:t.visible,locked:t.locked}));return y.export(this.entityManager.getAll(),s)}computeEntitiesBounds(){const s=this.entityManager.getAll();if(s.length===0)return null;let t=1/0,e=1/0,n=-1/0,i=-1/0;for(const r of s){const o=r.getBoundingBox();o.minX<t&&(t=o.minX),o.minY<e&&(e=o.minY),o.maxX>n&&(n=o.maxX),o.maxY>i&&(i=o.maxY)}return{minX:t,minY:e,maxX:n,maxY:i}}resetView(){this.viewport.reset()}setShowGrid(s){this.renderer.setShowGrid(s)}setShowAxes(s){this.renderer.setShowAxes(s)}getMousePosition(){return{...this.viewport.mouseWorld}}eraseSelected(){return this.entityManager.eraseSelected()}undo(){return this.entityManager.undo()}canUndo(){return this.entityManager.canUndo()}redo(){return this.entityManager.redo()}canRedo(){return this.entityManager.canRedo()}getUndoCount(){return this.entityManager.getUndoCount()}getRedoCount(){return this.entityManager.getRedoCount()}destroy(){var s;window.removeEventListener("resize",this.handleResize),this.renderer.destroy(),this.viewport.destroy(),this.canvas.remove(),(s=this.statusBar)==null||s.remove()}}const B={eye:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',"eye-off":'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',lock:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',"lock-open":'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>',delete:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',"arrow-down":'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',"arrow-right":'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'},g=new Ie({container:"#cad-container",showGrid:!0,showAxes:!0});window.cad=g;const k=document.getElementById("command-input"),X=document.getElementById("command-history"),Xe=document.getElementById("command-prompt"),Wt=[];function v(a,s=""){const t=document.createElement("div");t.className="history-line"+(s?" "+s:""),t.textContent=a,X.appendChild(t),X.scrollTop=X.scrollHeight,Wt.push({text:a,type:s})}let H=[],N=-1;function Ge(a){const s=a.trim(),t=s.indexOf(" "),e=(t===-1?s:s.substring(0,t)).toUpperCase(),n=t===-1?"":s.substring(t+1).trim();switch(e){case"LINE":case"L":return n?"已绘制直线":"已切换到直线工具";case"CIRCLE":case"C":return n?"已绘制圆形":"已切换到圆形工具";case"ARC":case"A":return n?"已绘制圆弧":"已切换到圆弧工具";case"SELECT":case"SEL":return"已切换到选择工具";case"COPY":case"CO":return"已切换到复制工具";case"MOVE":case"M":return"已切换到移动工具";case"FILLET":case"F":return n&&n.toUpperCase().startsWith("R")?"已设置圆角半径":"已切换到倒圆角工具";case"CHAMFER":case"CHA":return n&&n.toUpperCase().startsWith("D")?"已设置倒角距离":"已切换到倒角工具";case"EXTEND":case"EX":return"已切换到延伸工具";case"ERASE":case"E":return n.toUpperCase()==="ALL"?"已清除全部图元":n.toUpperCase()==="U"||n.toUpperCase()==="UNDO"?"已撤销删除":"已删除选中图元";case"OPEN":return"正在打开DXF文件";case"SAVE":return"已保存DXF文件";case"LAYER":case"LA":if(n){const i=n.trim().split(/\s+/)[0].toUpperCase();if(i==="NEW"||i==="N")return"已创建图层";if(i==="DEL"||i==="D")return"已删除图层";if(i==="SET"||i==="S")return"已切换当前图层"}return"图层管理";default:return"命令已执行"}}k.addEventListener("keydown",a=>{var s;if(a.stopPropagation(),a.key==="Enter"){const t=k.value.trim();if(!t)return;H.push(t),N=H.length,v(`> ${t}`);const e=t.trim().toUpperCase();if(e==="OPEN"){yt(),k.value="",X.classList.add("visible");return}if(e==="SAVE"){ft(),k.value="",X.classList.add("visible");return}const n=(s=M.getActiveTool)==null?void 0:s.call(M);if((n==null?void 0:n.name)==="fillet"&&/^R\s+[\d.]+$/i.test(t.trim())){const o=t.trim().match(/^R\s+([\d.]+)$/i);if(o){const c=parseFloat(o[1]);c>0&&(n.setRadius(c),v(`圆角半径已设为 ${c}`,"success"))}k.value="",X.classList.add("visible");return}if((n==null?void 0:n.name)==="chamfer"&&/^D\s+[\d.]+$/i.test(t.trim())){const o=t.trim().match(/^D\s+([\d.]+)$/i);if(o){const c=parseFloat(o[1]);c>0&&(n.setDistance(c),v(`倒角距离已设为 ${c}`,"success"))}k.value="",X.classList.add("visible");return}const i=Ge(t);g.executeCommand(t)?v(i,"success"):v("未知命令: "+t,"error"),k.value="",X.classList.add("visible")}else a.key==="ArrowUp"?(a.preventDefault(),N>0&&(N--,k.value=H[N])):a.key==="ArrowDown"?(a.preventDefault(),N<H.length-1?(N++,k.value=H[N]):(N=H.length,k.value="")):a.key==="Escape"&&(k.blur(),X.classList.remove("visible"))});k.addEventListener("focus",()=>{Wt.length>0&&X.classList.add("visible")});document.getElementById("cad-container").addEventListener("mousedown",()=>{X.classList.remove("visible")});const Fe=document.querySelectorAll(".tool-btn"),M=g.getToolManager();function De(a){Fe.forEach(t=>t.classList.remove("active"));const s=document.getElementById("tool-"+a);s&&s.classList.add("active")}M.onToolChange=a=>{De(a);const s={line:"直线:",circle:"圆形:",arc:"圆弧:",select:"选择:",copy:"复制:",move:"移动:",fillet:"倒圆角:",chamfer:"倒角:",extend:"延伸:"};Xe.textContent=s[a]||"命令:"};var Rt;(Rt=document.getElementById("tool-select"))==null||Rt.addEventListener("click",()=>{M.setActiveTool("select")});var Nt;(Nt=document.getElementById("tool-line"))==null||Nt.addEventListener("click",()=>{M.setActiveTool("line")});var Bt;(Bt=document.getElementById("tool-circle"))==null||Bt.addEventListener("click",()=>{M.setActiveTool("circle")});var Ot;(Ot=document.getElementById("tool-arc"))==null||Ot.addEventListener("click",()=>{M.setActiveTool("arc")});var Ut;(Ut=document.getElementById("tool-copy"))==null||Ut.addEventListener("click",()=>{M.setActiveTool("copy")});var Ht;(Ht=document.getElementById("tool-move"))==null||Ht.addEventListener("click",()=>{M.setActiveTool("move")});var zt;(zt=document.getElementById("tool-fillet"))==null||zt.addEventListener("click",()=>{M.setActiveTool("fillet")});var jt;(jt=document.getElementById("tool-chamfer"))==null||jt.addEventListener("click",()=>{M.setActiveTool("chamfer")});var Vt;(Vt=document.getElementById("tool-extend"))==null||Vt.addEventListener("click",()=>{M.setActiveTool("extend")});var Kt;(Kt=document.getElementById("tool-erase"))==null||Kt.addEventListener("click",()=>{const a=g.eraseSelected();a>0?(P(),v(`已删除 ${a} 个图元`,"success")):v("未选中图元","error")});const z=document.getElementById("tool-undo"),j=document.getElementById("tool-redo");function _t(){z&&(z.disabled=!g.canUndo(),z.title=g.canUndo()?`撤销 (Ctrl+Z) - ${g.getUndoCount()} 步`:"无可撤销操作"),j&&(j.disabled=!g.canRedo(),j.title=g.canRedo()?`重做 (Ctrl+Y) - ${g.getRedoCount()} 步`:"无可重做操作")}z==null||z.addEventListener("click",()=>{g.undo()&&(P(),v("已撤销","success"))});j==null||j.addEventListener("click",()=>{g.redo()&&(P(),v("已重做","success"))});setInterval(_t,500);_t();let O="",D=null;const It=500;function S(){O="",D&&(clearTimeout(D),D=null)}function Xt(){const a=O.toUpperCase();switch(S(),a){case"CO":return M.setActiveTool("copy"),v("已切换到复制工具","success"),!0;case"CHA":return M.setActiveTool("chamfer"),v("已切换到倒角工具","success"),!0;case"EX":return M.setActiveTool("extend"),v("已切换到延伸工具","success"),!0;default:return!1}}document.addEventListener("keydown",a=>{if(document.activeElement===k)return;const s=a.key.toLowerCase();if(a.ctrlKey){if(s==="c"){a.preventDefault(),S();const e=g.getEntityManager().getSelected();e.length>0&&(window._cadClipboard=e.map(n=>n.clone()),v(`已复制 ${e.length} 个图元`,"success"));return}if(s==="v"){if(a.preventDefault(),S(),window._cadClipboard&&window._cadClipboard.length>0){const e=g.getEntityManager();for(const n of window._cadClipboard)e.add(n.clone());e.clearSelection(),v(`已粘贴 ${window._cadClipboard.length} 个图元`,"success")}return}if(s==="z"){a.preventDefault(),S(),g.undo()&&(P(),v("已撤销","success"));return}if(s==="y"){a.preventDefault(),S(),g.redo()&&(P(),v("已重做","success"));return}if(s==="s"){a.preventDefault(),S(),ft();return}if(s==="o"){a.preventDefault(),S(),yt();return}return}if(a.key==="F8"){a.preventDefault(),S();const e=M.toggleOrtho();v(`正交模式: ${e?"开":"关"}`,"success");return}if(a.key==="F3"){a.preventDefault(),S();const e=M.toggleSnap();v(`捕捉模式: ${e?"开":"关"}`,"success");return}if(a.key==="Escape"){S(),M.setActiveTool("select");return}if(a.key==="Delete"){S();const e=g.eraseSelected();e>0&&(P(),v(`已删除 ${e} 个图元`,"success"));return}const t={l:"line",c:"circle",a:"arc",m:"move",f:"fillet",e:null};if(t.hasOwnProperty(s)){if(s==="e"){S();const e=g.eraseSelected();e>0&&(P(),v(`已删除 ${e} 个图元`,"success"));return}if(s==="c"){O+=s,D&&clearTimeout(D),D=setTimeout(()=>{O==="c"&&M.setActiveTool("circle"),S()},It);return}S(),M.setActiveTool(t[s]);return}if(s==="o"||s==="h"||s==="x"){O+=s,D&&clearTimeout(D);const e=O.toUpperCase();if(e==="CO"||e==="CHA"||e==="EX"){Xt();return}if(["CO","CHA","EX"].some(i=>i.startsWith(e))){D=setTimeout(()=>{Xt()||O[0].toLowerCase()==="c"&&M.setActiveTool("circle"),S()},It);return}S();return}});function yt(){const a=document.createElement("input");a.type="file",a.accept=".dxf",a.style.display="none",document.body.appendChild(a),a.addEventListener("change",()=>{var e;const s=(e=a.files)==null?void 0:e[0];if(!s){a.remove();return}const t=new FileReader;t.onload=()=>{const n=t.result;if(typeof n=="string"){const i=g.loadDXF(n);v(`已打开 ${s.name}（${i.entities.length} 个图元，版本: ${i.version}）`,"success"),P()}a.remove()},t.onerror=()=>{v("读取文件失败","error"),a.remove()},t.readAsText(s)}),a.click()}function ft(){const a=g.saveDXF(),s=new Blob([a],{type:"application/dxf"}),t=URL.createObjectURL(s),e=document.createElement("a");e.href=t,e.download="drawing.dxf",document.body.appendChild(e),e.click(),document.body.removeChild(e),URL.revokeObjectURL(t),v("已保存DXF文件","success")}const dt=document.getElementById("panel-content"),te=document.getElementById("properties-panel");function A(a){return a.toFixed(2)}function et(a){return(a*180/Math.PI).toFixed(1)+"°"}function P(){const a=g.getEntityManager().getSelected();if(a.length===0){dt.innerHTML='<div class="panel-empty">未选中图元</div>';return}if(a.length>1){dt.innerHTML=`<div class="panel-section">
+      <div class="panel-section-title">选择集</div>
+      <div class="prop-row"><span class="prop-label">数量</span><span class="prop-value">${a.length}</span></div>
+    </div>`;return}const s=a[0];let t="";t+=`<div class="panel-section">
+    <div class="panel-section-title">基本信息</div>
+    <div class="prop-row"><span class="prop-label">类型</span><span class="prop-value">${s.type==="line"?"直线":s.type==="circle"?"圆形":"圆弧"}</span></div>
+    <div class="prop-row"><span class="prop-label">图层</span><span class="prop-value">${s.layer}</span></div>
+    <div class="prop-row"><span class="prop-label">ID</span><span class="prop-value" style="font-size:10px">${s.id}</span></div>
+  </div>`,s.type==="line"?t+=`<div class="panel-section">
+      <div class="panel-section-title">直线参数</div>
+      <div class="prop-row"><span class="prop-label">起点 X</span><span class="prop-value">${A(s.startX)}</span></div>
+      <div class="prop-row"><span class="prop-label">起点 Y</span><span class="prop-value">${A(s.startY)}</span></div>
+      <div class="prop-row"><span class="prop-label">终点 X</span><span class="prop-value">${A(s.endX)}</span></div>
+      <div class="prop-row"><span class="prop-label">终点 Y</span><span class="prop-value">${A(s.endY)}</span></div>
+      <div class="prop-row"><span class="prop-label">长度</span><span class="prop-value">${A(s.getLength())}</span></div>
+      <div class="prop-row"><span class="prop-label">角度</span><span class="prop-value">${et(s.getAngle())}</span></div>
+    </div>`:s.type==="circle"?t+=`<div class="panel-section">
+      <div class="panel-section-title">圆形参数</div>
+      <div class="prop-row"><span class="prop-label">圆心 X</span><span class="prop-value">${A(s.centerX)}</span></div>
+      <div class="prop-row"><span class="prop-label">圆心 Y</span><span class="prop-value">${A(s.centerY)}</span></div>
+      <div class="prop-row"><span class="prop-label">半径</span><span class="prop-value">${A(s.radius)}</span></div>
+      <div class="prop-row"><span class="prop-label">周长</span><span class="prop-value">${A(s.getCircumference())}</span></div>
+      <div class="prop-row"><span class="prop-label">面积</span><span class="prop-value">${A(s.getArea())}</span></div>
+    </div>`:s.type==="arc"&&(t+=`<div class="panel-section">
+      <div class="panel-section-title">圆弧参数</div>
+      <div class="prop-row"><span class="prop-label">圆心 X</span><span class="prop-value">${A(s.centerX)}</span></div>
+      <div class="prop-row"><span class="prop-label">圆心 Y</span><span class="prop-value">${A(s.centerY)}</span></div>
+      <div class="prop-row"><span class="prop-label">半径</span><span class="prop-value">${A(s.radius)}</span></div>
+      <div class="prop-row"><span class="prop-label">起始角度</span><span class="prop-value">${et(s.startAngle)}</span></div>
+      <div class="prop-row"><span class="prop-label">终止角度</span><span class="prop-value">${et(s.endAngle)}</span></div>
+      <div class="prop-row"><span class="prop-label">弧度</span><span class="prop-value">${et(s.getArcAngle())}</span></div>
+    </div>`),dt.innerHTML=t}const Gt=M.getTool("select");Gt&&(Gt.onSelectionChange=P);var qt;(qt=document.getElementById("panel-close"))==null||qt.addEventListener("click",()=>{te.classList.toggle("hidden")});P();const T=g.getLayerManager(),rt=document.getElementById("layer-list"),$e=["#FF0000","#FFFF00","#00FF00","#00FFFF","#0000FF","#FF00FF","#FFFFFF","#808080"];function $(){const a=T.getLayers(),s=T.getCurrentLayer(),t=g.getEntityManager().getAll();let e="";for(const n of a){const i=n.name===s,r=t.filter(o=>o.layer===n.name).length;e+=`<div class="layer-item${i?" active":""}" data-layer="${n.name}">
+      <span class="layer-color" style="background: ${n.color}" data-layer="${n.name}" title="点击修改颜色"></span>
+      <span class="layer-name" data-layer="${n.name}" title="双击重命名">${n.name}</span>
+      <span class="layer-count">${r}</span>
+      <button class="layer-btn${n.visible?"":" off"}" data-action="visibility" data-layer="${n.name}" title="${n.visible?"隐藏":"显示"}图层">${n.visible?B.eye:B["eye-off"]}</button>
+      <button class="layer-btn${n.locked?"":" off"}" data-action="lock" data-layer="${n.name}" title="${n.locked?"解锁":"锁定"}图层">${n.locked?B.lock:B["lock-open"]}</button>
+      ${n.name!=="0"?`<button class="layer-btn" data-action="delete" data-layer="${n.name}" title="删除图层">${B.delete}</button>`:""}
+    </div>`}rt.innerHTML=e}rt.addEventListener("click",a=>{const s=a.target.closest("[data-action]")||a.target.closest(".layer-item");if(!s)return;const t=s.dataset.action,e=s.dataset.layer;if(e){if(t==="visibility"){T.toggleVisibility(e),$();return}if(t==="lock"){T.toggleLock(e),$();return}if(t==="delete"){const n=T.getLayerEntityCount(e,g.getEntityManager().getAll());if(n>0&&!confirm(`图层 "${e}" 上有 ${n} 个图元，确定删除？`))return;T.removeLayer(e),$();return}s.classList.contains("layer-item")&&(T.setCurrentLayer(e),$())}});rt.addEventListener("dblclick",a=>{const s=a.target.closest(".layer-name");if(!s)return;const t=s.dataset.layer;if(!t||t==="0")return;const e=prompt("重命名图层:",t);if(e&&e!==t){if(T.hasLayer(e)){alert("图层名已存在");return}const n=g.getEntityManager().getAll();for(const i of n)i.layer===t&&(i.layer=e);T.renameLayer(t,e),$(),P()}});rt.addEventListener("click",a=>{const s=a.target.closest(".layer-color");if(!s)return;const t=s.dataset.layer;if(!t)return;const e=document.createElement("div");e.style.cssText="position:absolute;background:#2d2d2d;border:1px solid #3a3a3a;border-radius:4px;padding:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.5);";const n=s.getBoundingClientRect();e.style.left=n.left+"px",e.style.top=n.bottom+4+"px";for(const r of $e){const o=document.createElement("div");o.style.cssText=`width:24px;height:24px;background:${r};border:1px solid #555;border-radius:3px;cursor:pointer;`,o.title=r,o.addEventListener("click",()=>{T.setLayerColor(t,r),$(),e.remove()}),e.appendChild(o)}document.body.appendChild(e);const i=r=>{e.contains(r.target)||(e.remove(),document.removeEventListener("click",i))};setTimeout(()=>document.addEventListener("click",i),0)});var Zt;(Zt=document.getElementById("layer-add"))==null||Zt.addEventListener("click",()=>{const a=prompt("新图层名称:");if(a){if(T.hasLayer(a)){alert("图层名已存在");return}T.addLayer(a),T.setCurrentLayer(a),$()}});T.onChange=()=>{$(),gt()};$();const ot=document.getElementById("menu-bar");let Z=null;function J(){ot.querySelectorAll(".menu-item.open").forEach(a=>a.classList.remove("open")),Z=null}ot.addEventListener("click",a=>{const s=a.target.closest(".menu-item");if(!s)return;const t=a.target.closest(".menu-dropdown-item");if(t){const e=t.dataset.action;e&&Re(e),J();return}s.classList.contains("open")?J():(J(),s.classList.add("open"),Z=s)});ot.addEventListener("mouseover",a=>{if(!Z)return;const s=a.target.closest(".menu-item");s&&s!==Z&&s.dataset.menu&&(J(),s.classList.add("open"),Z=s)});document.addEventListener("click",a=>{ot.contains(a.target)||J()});let st=!0;function Re(a){switch(a){case"open":yt();break;case"save":ft();break;case"undo":g.undo()&&(P(),v("已撤销","success"));break;case"redo":g.redo()&&(P(),v("已重做","success"));break;case"copy":{const s=g.getEntityManager().getSelected();s.length>0&&(window._cadClipboard=s.map(t=>t.clone()),v(`已复制 ${s.length} 个图元`,"success"))}break;case"paste":if(window._cadClipboard&&window._cadClipboard.length>0){const s=g.getEntityManager();for(const t of window._cadClipboard)s.add(t.clone());s.clearSelection(),v(`已粘贴 ${window._cadClipboard.length} 个图元`,"success")}break;case"erase":{const s=g.eraseSelected();s>0&&(P(),v(`已删除 ${s} 个图元`,"success"))}break;case"toggle-command":at();break;case"toggle-properties":te.classList.toggle("hidden");break;case"toggle-grid":st=!st,g.setShowGrid(st),v(`网格: ${st?"开":"关"}`,"success");break;case"zoom-extents":g.zoomExtents(),v("已缩放全部","success");break;case"reset-view":g.resetView(),v("已重置视图","success");break;case"tool-line":M.setActiveTool("line");break;case"tool-circle":M.setActiveTool("circle");break;case"tool-arc":M.setActiveTool("arc");break;case"tool-move":M.setActiveTool("move");break;case"tool-copy":M.setActiveTool("copy");break;case"tool-fillet":M.setActiveTool("fillet");break;case"tool-chamfer":M.setActiveTool("chamfer");break;case"tool-extend":M.setActiveTool("extend");break;case"about":alert(`Howdz CAD
+纯前端在线CAD插件
+基于Canvas 2D渲染`);break}}let nt=!1;const Ft=document.getElementById("command-line-body"),pt=document.getElementById("command-toggle-btn"),Ne=document.getElementById("command-line-header");function at(){nt=!nt;const a=pt.querySelector("svg");nt?(Ft.classList.add("collapsed"),a.outerHTML=B["arrow-right"]):(Ft.classList.remove("collapsed"),a.outerHTML=B["arrow-down"])}Ne.addEventListener("click",a=>{a.target!==pt&&at()});pt.addEventListener("click",a=>{a.stopPropagation(),at()});const Be=document.getElementById("status-coords"),Oe=document.getElementById("status-layer"),Dt=document.getElementById("status-ortho"),$t=document.getElementById("status-snap"),Ue=document.getElementById("status-zoom");function gt(){const a=g.getViewport(),s=g.getLayerManager(),t=g.getToolManager(),{mouseWorld:e,scale:n}=a;Be.textContent=`X: ${e.x.toFixed(2)}   Y: ${e.y.toFixed(2)}`,Oe.textContent=`图层: ${s.getCurrentLayer()}`,Dt.textContent=`正交: ${t.orthoMode?"开":"关"}`,Dt.className=t.orthoMode?"status-item status-active":"status-item",$t.textContent=`捕捉: ${t.snapMode?"开":"关"}`,$t.className=t.snapMode?"status-item status-active":"status-item",Ue.textContent=`缩放: ${(n*100).toFixed(0)}%`}setInterval(gt,100);gt();document.addEventListener("keydown",a=>{document.activeElement!==k&&a.key==="F2"&&(a.preventDefault(),at(),nt||k.focus())});console.log("HowdzCAD 初始化完成");console.log("操作说明:");console.log("  - 鼠标滚轮: 缩放");console.log("  - 鼠标中键拖拽: 平移");console.log("快捷键:");console.log("  - L: 直线 | C: 圆形 | A: 圆弧");console.log("  - M: 移动 | CO: 复制 | E/Delete: 删除");console.log("  - F: 倒圆角 | CHA: 倒角 | EX: 延伸");console.log("  - Esc: 选择工具");console.log("  - F3: 捕捉模式 | F8: 正交模式");console.log("  - Ctrl+Z: 撤销 | Ctrl+Y: 重做");console.log("  - Ctrl+C: 复制到剪贴板 | Ctrl+V: 粘贴");console.log("  - Ctrl+S: 保存DXF | Ctrl+O: 打开DXF");console.log("  - 拖拽夹点可实时修改图形形状");console.log("图层管理:");console.log("  - 右侧面板管理图层（新建/删除/重命名/颜色/显示/锁定）");console.log("  - LAYER NEW <名称> [颜色] | LAYER DEL <名称> | LAYER SET <名称>");</script>
+</head>
+<body>
+  <div class="layout">
+    <!-- 顶部菜单栏 -->
+    <div class="menu-bar" id="menu-bar">
+      <div class="menu-item" data-menu="file">
+        文件
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" data-action="open">打开 <span class="shortcut">Ctrl+O</span></div>
+          <div class="menu-dropdown-item" data-action="save">保存 <span class="shortcut">Ctrl+S</span></div>
+        </div>
+      </div>
+      <div class="menu-item" data-menu="edit">
+        编辑
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" data-action="undo">撤销 <span class="shortcut">Ctrl+Z</span></div>
+          <div class="menu-dropdown-item" data-action="redo">重做 <span class="shortcut">Ctrl+Y</span></div>
+          <div class="menu-dropdown-divider"></div>
+          <div class="menu-dropdown-item" data-action="copy">复制 <span class="shortcut">Ctrl+C</span></div>
+          <div class="menu-dropdown-item" data-action="paste">粘贴 <span class="shortcut">Ctrl+V</span></div>
+          <div class="menu-dropdown-divider"></div>
+          <div class="menu-dropdown-item" data-action="erase">删除 <span class="shortcut">Delete</span></div>
+        </div>
+      </div>
+      <div class="menu-item" data-menu="view">
+        视图
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" data-action="toggle-command">命令行</div>
+          <div class="menu-dropdown-item" data-action="toggle-properties">属性面板</div>
+          <div class="menu-dropdown-divider"></div>
+          <div class="menu-dropdown-item" data-action="toggle-grid">网格</div>
+          <div class="menu-dropdown-item" data-action="zoom-extents">缩放全部</div>
+          <div class="menu-dropdown-item" data-action="reset-view">重置视图</div>
+        </div>
+      </div>
+      <div class="menu-item" data-menu="draw">
+        绘图
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" data-action="tool-line">直线 <span class="shortcut">L</span></div>
+          <div class="menu-dropdown-item" data-action="tool-circle">圆形 <span class="shortcut">C</span></div>
+          <div class="menu-dropdown-item" data-action="tool-arc">圆弧 <span class="shortcut">A</span></div>
+        </div>
+      </div>
+      <div class="menu-item" data-menu="modify">
+        修改
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" data-action="tool-move">移动 <span class="shortcut">M</span></div>
+          <div class="menu-dropdown-item" data-action="tool-copy">复制 <span class="shortcut">CO</span></div>
+          <div class="menu-dropdown-item" data-action="erase">删除 <span class="shortcut">E</span></div>
+          <div class="menu-dropdown-divider"></div>
+          <div class="menu-dropdown-item" data-action="tool-fillet">倒圆角 <span class="shortcut">F</span></div>
+          <div class="menu-dropdown-item" data-action="tool-chamfer">倒角 <span class="shortcut">CHA</span></div>
+          <div class="menu-dropdown-item" data-action="tool-extend">延伸 <span class="shortcut">EX</span></div>
+        </div>
+      </div>
+      <div class="menu-item" data-menu="help">
+        帮助
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" data-action="about">关于 HowdzCAD</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主体区域 -->
+    <div class="main">
+      <!-- 左侧工具栏 -->
+      <div class="toolbar">
+        <button class="tool-btn active" id="tool-select" title="选择 (Esc)">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7 18 3-7 7-3z"/></svg>
+        </button>
+        <div class="tool-divider"></div>
+        <button class="tool-btn" id="tool-line" title="直线 (L)">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="5" y1="19" x2="19" y2="5"/></svg>
+        </button>
+        <button class="tool-btn" id="tool-circle" title="圆形 (C)">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/></svg>
+        </button>
+        <button class="tool-btn" id="tool-arc" title="圆弧 (A)">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 19A9 9 0 0 1 19 10"/></svg>
+        </button>
+        <div class="tool-divider"></div>
+        <button class="tool-btn" id="tool-move" title="移动 (M)">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+        </button>
+        <button class="tool-btn" id="tool-copy" title="复制 (CO)">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="1"/><path d="M16 8V6a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h2"/></svg>
+        </button>
+        <button class="tool-btn" id="tool-erase" title="删除 (E / Delete)">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-11 11H6v-4L17 3z"/><line x1="4" y1="21" x2="20" y2="21"/></svg>
+        </button>
+        <div class="tool-divider"></div>
+        <button class="tool-btn" id="tool-fillet" title="倒圆角 (F)">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 19V5h14"/><path d="M5 19c0-4 3-7 7-7"/></svg>
+        </button>
+        <button class="tool-btn" id="tool-chamfer" title="倒角 (CHA)">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V5h14"/><path d="M5 19l7-7"/></svg>
+        </button>
+        <button class="tool-btn" id="tool-extend" title="延伸 (EX)">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="12" x2="10" y2="12"/><polyline points="7 9 10 12 7 15"/><line x1="14" y1="12" x2="22" y2="12"/></svg>
+        </button>
+        <div class="tool-divider"></div>
+        <button class="tool-btn" id="tool-undo" title="撤销 (Ctrl+Z)" disabled>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        </button>
+        <button class="tool-btn" id="tool-redo" title="重做 (Ctrl+Y)" disabled>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg>
+        </button>
+      </div>
+
+      <!-- 绘图区域 -->
+      <div class="canvas-area">
+        <div id="cad-container"></div>
+      </div>
+
+      <!-- 右侧属性面板 -->
+      <div class="properties-panel" id="properties-panel">
+        <div class="panel-header">
+          <span>属性</span>
+          <span class="close-btn" id="panel-close" title="关闭面板"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></span>
+        </div>
+        <div id="panel-content">
+          <div class="panel-empty">未选中图元</div>
+        </div>
+        <!-- 图层管理 -->
+        <div class="layer-section">
+          <div class="panel-header">
+            <span>图层</span>
+            <button class="layer-add-btn" id="layer-add" title="新建图层"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+          </div>
+          <div class="layer-list" id="layer-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部命令行（可折叠） -->
+    <div class="command-line-section">
+      <div class="command-line-header" id="command-line-header">
+        <span class="cmd-title">命令行</span>
+        <button class="command-toggle-btn" id="command-toggle-btn" title="折叠/展开命令行"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+      </div>
+      <div class="command-line-body" id="command-line-body">
+        <div class="command-line">
+          <span class="command-prompt" id="command-prompt">命令:</span>
+          <input class="command-input" id="command-input" type="text" placeholder="输入命令 (LINE, CIRCLE, ARC, COPY, MOVE, FILLET, CHAMFER, EXTEND, ERASE, LAYER)..." />
+        </div>
+        <div class="command-history" id="command-history"></div>
+      </div>
+    </div>
+
+    <!-- 状态栏 -->
+    <div class="status-bar" id="status-bar">
+      <span class="status-item" id="status-coords">X: 0.00 &nbsp; Y: 0.00</span>
+      <span class="status-sep"></span>
+      <span class="status-item" id="status-layer">图层: 0</span>
+      <span class="status-sep"></span>
+      <span class="status-item" id="status-ortho">正交: 关</span>
+      <span class="status-sep"></span>
+      <span class="status-item" id="status-snap">捕捉: 关</span>
+      <span class="status-sep"></span>
+      <span class="status-item" id="status-zoom">缩放: 100%</span>
+    </div>
+  </div>
+
+</body>
+</html>
