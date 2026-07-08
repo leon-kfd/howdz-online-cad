@@ -90,6 +90,9 @@ export class HowdzCAD {
     // 视口变化时更新状态栏
     this.viewport.onUpdate = () => this.updateStatusBar();
 
+    // 绑定鼠标事件到工具管理器
+    this.bindToolEvents();
+
     // 处理窗口resize
     this.handleResize();
     window.addEventListener('resize', this.handleResize);
@@ -118,6 +121,8 @@ export class HowdzCAD {
       ? `${this.options.height}px`
       : this.options.height;
     canvas.style.display = 'block';
+    canvas.tabIndex = 0;  // 使画布可接收键盘事件
+    canvas.style.cursor = 'crosshair';
     this.container.appendChild(canvas);
 
     // 创建状态栏
@@ -214,6 +219,31 @@ export class HowdzCAD {
     // 将工具管理器的叠加层绘制传递给渲染器
     this.renderer.setOverlayRenderer((ctx) => {
       this.toolManager.drawOverlay(ctx, this.viewport);
+    });
+  }
+
+  /**
+   * 绑定画布鼠标/键盘事件到工具管理器
+   */
+  private bindToolEvents(): void {
+    this.canvas.addEventListener('mousedown', (e: MouseEvent) => {
+      const { mouseWorld, mouseScreen, scale } = this.viewport;
+      this.toolManager.dispatchMouseDown(mouseWorld, mouseScreen, scale, e);
+    });
+
+    this.canvas.addEventListener('mousemove', (e: MouseEvent) => {
+      const { mouseWorld, mouseScreen, scale } = this.viewport;
+      this.toolManager.dispatchMouseMove(mouseWorld, mouseScreen, scale, e);
+    });
+
+    this.canvas.addEventListener('mouseup', (e: MouseEvent) => {
+      const { mouseWorld, mouseScreen, scale } = this.viewport;
+      this.toolManager.dispatchMouseUp(mouseWorld, mouseScreen, scale, e);
+    });
+
+    this.canvas.addEventListener('keydown', (e: KeyboardEvent) => {
+      const { mouseWorld, mouseScreen, scale } = this.viewport;
+      this.toolManager.dispatchKeyDown(mouseWorld, mouseScreen, scale, e);
     });
   }
 

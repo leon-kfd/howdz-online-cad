@@ -19,6 +19,42 @@
 
 ---
 
+## 2026-07-07 16:10 - US-001
+- Verified existing implementation covers all US-001 acceptance criteria
+- Canvas 2D rendering with middle-mouse drag panning (Viewport.ts)
+- Mouse wheel zoom 0.01x-100x centered on mouse position (Viewport.ts)
+- Grid background with toggle + 1-2-5 adaptive density via niceNumber() (Renderer.ts)
+- Origin marker (red X-axis, green Y-axis) and crosshair cursor (Renderer.ts)
+- Bottom status bar showing mouse coordinates, zoom level, FPS (CAD.ts)
+- requestAnimationFrame rendering loop (Renderer.ts)
+- Files: src/core/CAD.ts, src/core/Viewport.ts, src/core/Renderer.ts, src/core/Entity.ts, src/core/types.ts, src/utils/math.ts, src/index.ts, demo/index.html
+- **Learnings for future iterations:**
+  - The CADOptions interface in types.ts defines all configurable options
+  - Viewport class manages pan/zoom state and coordinate transforms
+  - Renderer only handles drawing; entity rendering will need integration with Renderer
+  - The demo page at demo/index.html has a full UI layout with menu, toolbar, canvas, and command line
+---
+
+## 2026-07-07 16:30 - US-002
+- Implemented complete line drawing system with interactive tools
+- **EntityManager** (src/core/EntityManager.ts): Entity collection with add/remove/select, hitTest, box selection
+- **Tool system** (src/core/tools/): Tool interface, ToolManager, SelectTool, LineTool
+- **LineTool**: Click two points to draw, continuous mode, ortho mode (F8), command line parsing
+- **SelectTool**: Single click select, Shift+toggle, box select (left-to-right), cross select (right-to-left)
+- **Renderer**: Updated to render entities from EntityManager + tool overlay
+- **CAD.ts**: Integrated EntityManager, ToolManager, command line executeCommand()
+- **demo/index.html**: Added line tool button, command input with history (up/down arrows)
+- Files: src/core/EntityManager.ts, src/core/tools/Tool.ts, src/core/tools/ToolManager.ts, src/core/tools/SelectTool.ts, src/core/tools/LineTool.ts, src/core/tools/index.ts, src/core/CAD.ts, src/core/Renderer.ts, src/index.ts, demo/index.html
+- **Learnings for future iterations:**
+  - Tool system uses ToolContext to pass mouse position, ortho mode, and scale
+  - Tools draw overlay via drawOverlay() method (rendered after entities, before crosshair)
+  - EntityManager stores selection as Set<string> of entity IDs
+  - Command line input in demo page needs e.stopPropagation() to prevent keyboard events reaching CAD
+  - SelectTool needs Viewport reference (passed via constructor) for box selection coordinate conversion
+  - TypeScript strict mode requires underscore prefix for unused params (_ctx, _e)
+  - isolatedModules requires 'export type' for type-only re-exports
+---
+
 ## 2026-07-07 - US-003
 - Implemented CircleEntity and CircleTool
 - Files changed: `src/core/Entity.ts`, `src/core/tools/CircleTool.ts` (new), `src/core/CAD.ts`, `src/core/tools/index.ts`, `src/index.ts`, `demo/index.html`, `tasks/prd.json`

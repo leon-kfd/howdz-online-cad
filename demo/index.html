@@ -356,18 +356,194 @@
       text-align: center;
       line-height: 1.8;
     }
+
+    /* 隐藏CAD内部状态栏（用外部布局状态栏替代） */
+    #cad-container > div {
+      display: none;
+    }
+
+    /* 菜单下拉 */
+    .menu-item {
+      position: relative;
+    }
+    .menu-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: #2d2d2d;
+      border: 1px solid #3a3a3a;
+      border-radius: 0 0 4px 4px;
+      min-width: 200px;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      padding: 4px 0;
+    }
+    .menu-item.open .menu-dropdown {
+      display: block;
+    }
+    .menu-dropdown-item {
+      padding: 6px 16px;
+      color: #ccc;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      white-space: nowrap;
+    }
+    .menu-dropdown-item:hover {
+      background: #3a3a3a;
+      color: #fff;
+    }
+    .menu-dropdown-item .shortcut {
+      color: #888;
+      font-size: 11px;
+      margin-left: 24px;
+    }
+    .menu-dropdown-item.disabled {
+      color: #555;
+      cursor: default;
+    }
+    .menu-dropdown-item.disabled:hover {
+      background: transparent;
+      color: #555;
+    }
+    .menu-dropdown-divider {
+      height: 1px;
+      background: #3a3a3a;
+      margin: 4px 0;
+    }
+
+    /* 可折叠命令行 */
+    .command-line-section {
+      flex-shrink: 0;
+    }
+    .command-line-header {
+      height: 22px;
+      background: #2d2d2d;
+      border-top: 1px solid #3a3a3a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .command-line-header:hover {
+      background: #333;
+    }
+    .command-line-header .cmd-title {
+      color: #999;
+      font-size: 11px;
+    }
+    .command-toggle-btn {
+      background: none;
+      border: none;
+      color: #888;
+      cursor: pointer;
+      font-size: 10px;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    .command-toggle-btn:hover {
+      color: #fff;
+    }
+    .command-line-body {
+      /* 继承原有样式 */
+    }
+    .command-line-body.collapsed {
+      display: none;
+    }
+
+    /* 底部状态栏 */
+    .status-bar {
+      height: 24px;
+      background: #2d2d2d;
+      border-top: 1px solid #3a3a3a;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 16px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px;
+      color: #999;
+      flex-shrink: 0;
+      user-select: none;
+    }
+    .status-bar .status-item {
+      display: inline;
+    }
+    .status-bar .status-active {
+      color: #0078d4;
+    }
+    .status-bar .status-sep {
+      width: 1px;
+      height: 14px;
+      background: #3a3a3a;
+    }
   </style>
 </head>
 <body>
   <div class="layout">
     <!-- 顶部菜单栏 -->
-    <div class="menu-bar">
-      <div class="menu-item">文件</div>
-      <div class="menu-item">编辑</div>
-      <div class="menu-item">视图</div>
-      <div class="menu-item">绘图</div>
-      <div class="menu-item">修改</div>
-      <div class="menu-item">帮助</div>
+    <div class="menu-bar" id="menu-bar">
+      <div class="menu-item" data-menu="file">
+        文件
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" data-action="open">打开 <span class="shortcut">Ctrl+O</span></div>
+          <div class="menu-dropdown-item" data-action="save">保存 <span class="shortcut">Ctrl+S</span></div>
+        </div>
+      </div>
+      <div class="menu-item" data-menu="edit">
+        编辑
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" data-action="undo">撤销 <span class="shortcut">Ctrl+Z</span></div>
+          <div class="menu-dropdown-item" data-action="redo">重做 <span class="shortcut">Ctrl+Y</span></div>
+          <div class="menu-dropdown-divider"></div>
+          <div class="menu-dropdown-item" data-action="copy">复制 <span class="shortcut">Ctrl+C</span></div>
+          <div class="menu-dropdown-item" data-action="paste">粘贴 <span class="shortcut">Ctrl+V</span></div>
+          <div class="menu-dropdown-divider"></div>
+          <div class="menu-dropdown-item" data-action="erase">删除 <span class="shortcut">Delete</span></div>
+        </div>
+      </div>
+      <div class="menu-item" data-menu="view">
+        视图
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" data-action="toggle-command">命令行</div>
+          <div class="menu-dropdown-item" data-action="toggle-properties">属性面板</div>
+          <div class="menu-dropdown-divider"></div>
+          <div class="menu-dropdown-item" data-action="toggle-grid">网格</div>
+          <div class="menu-dropdown-item" data-action="zoom-extents">缩放全部</div>
+          <div class="menu-dropdown-item" data-action="reset-view">重置视图</div>
+        </div>
+      </div>
+      <div class="menu-item" data-menu="draw">
+        绘图
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" data-action="tool-line">直线 <span class="shortcut">L</span></div>
+          <div class="menu-dropdown-item" data-action="tool-circle">圆形 <span class="shortcut">C</span></div>
+          <div class="menu-dropdown-item" data-action="tool-arc">圆弧 <span class="shortcut">A</span></div>
+        </div>
+      </div>
+      <div class="menu-item" data-menu="modify">
+        修改
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" data-action="tool-move">移动 <span class="shortcut">M</span></div>
+          <div class="menu-dropdown-item" data-action="tool-copy">复制 <span class="shortcut">CO</span></div>
+          <div class="menu-dropdown-item" data-action="erase">删除 <span class="shortcut">E</span></div>
+          <div class="menu-dropdown-divider"></div>
+          <div class="menu-dropdown-item" data-action="tool-fillet">倒圆角 <span class="shortcut">F</span></div>
+          <div class="menu-dropdown-item" data-action="tool-chamfer">倒角 <span class="shortcut">CHA</span></div>
+          <div class="menu-dropdown-item" data-action="tool-extend">延伸 <span class="shortcut">EX</span></div>
+        </div>
+      </div>
+      <div class="menu-item" data-menu="help">
+        帮助
+        <div class="menu-dropdown">
+          <div class="menu-dropdown-item" data-action="about">关于 HowdzCAD</div>
+        </div>
+      </div>
     </div>
 
     <!-- 主体区域 -->
@@ -441,12 +617,33 @@
       </div>
     </div>
 
-    <!-- 底部命令行 -->
-    <div class="command-line">
-      <span class="command-prompt" id="command-prompt">命令:</span>
-      <input class="command-input" id="command-input" type="text" placeholder="输入命令 (LINE, CIRCLE, ARC, COPY, MOVE, FILLET, CHAMFER, EXTEND, ERASE, LAYER)..." />
+    <!-- 底部命令行（可折叠） -->
+    <div class="command-line-section">
+      <div class="command-line-header" id="command-line-header">
+        <span class="cmd-title">命令行</span>
+        <button class="command-toggle-btn" id="command-toggle-btn" title="折叠/展开命令行">▼</button>
+      </div>
+      <div class="command-line-body" id="command-line-body">
+        <div class="command-line">
+          <span class="command-prompt" id="command-prompt">命令:</span>
+          <input class="command-input" id="command-input" type="text" placeholder="输入命令 (LINE, CIRCLE, ARC, COPY, MOVE, FILLET, CHAMFER, EXTEND, ERASE, LAYER)..." />
+        </div>
+        <div class="command-history" id="command-history"></div>
+      </div>
     </div>
-    <div class="command-history" id="command-history"></div>
+
+    <!-- 状态栏 -->
+    <div class="status-bar" id="status-bar">
+      <span class="status-item" id="status-coords">X: 0.00 &nbsp; Y: 0.00</span>
+      <span class="status-sep"></span>
+      <span class="status-item" id="status-layer">图层: 0</span>
+      <span class="status-sep"></span>
+      <span class="status-item" id="status-ortho">正交: 关</span>
+      <span class="status-sep"></span>
+      <span class="status-item" id="status-snap">捕捉: 关</span>
+      <span class="status-sep"></span>
+      <span class="status-item" id="status-zoom">缩放: 100%</span>
+    </div>
   </div>
 
   <script type="module">
@@ -1235,6 +1432,202 @@
 
     // 初始渲染图层列表
     renderLayerList();
+
+    // ========== 菜单下拉 ==========
+    const menuBar = document.getElementById('menu-bar');
+    let openMenu = null;
+
+    function closeAllMenus() {
+      menuBar.querySelectorAll('.menu-item.open').forEach(el => el.classList.remove('open'));
+      openMenu = null;
+    }
+
+    menuBar.addEventListener('click', (e) => {
+      const menuItem = e.target.closest('.menu-item');
+      if (!menuItem) return;
+
+      // 如果点击的是下拉项，执行操作
+      const dropdownItem = e.target.closest('.menu-dropdown-item');
+      if (dropdownItem) {
+        const action = dropdownItem.dataset.action;
+        if (action) executeMenuAction(action);
+        closeAllMenus();
+        return;
+      }
+
+      // 切换菜单展开
+      if (menuItem.classList.contains('open')) {
+        closeAllMenus();
+      } else {
+        closeAllMenus();
+        menuItem.classList.add('open');
+        openMenu = menuItem;
+      }
+    });
+
+    // 鼠标移入其他菜单项时自动切换
+    menuBar.addEventListener('mouseover', (e) => {
+      if (!openMenu) return;
+      const menuItem = e.target.closest('.menu-item');
+      if (menuItem && menuItem !== openMenu && menuItem.dataset.menu) {
+        closeAllMenus();
+        menuItem.classList.add('open');
+        openMenu = menuItem;
+      }
+    });
+
+    // 点击外部关闭菜单
+    document.addEventListener('click', (e) => {
+      if (!menuBar.contains(e.target)) {
+        closeAllMenus();
+      }
+    });
+
+    let gridEnabled = true;
+
+    function executeMenuAction(action) {
+      switch (action) {
+        // 文件
+        case 'open': openDXFFile(); break;
+        case 'save': saveDXFFile(); break;
+
+        // 编辑
+        case 'undo':
+          if (cad.undo()) { updatePropertyPanel(); addHistory('已撤销', 'success'); }
+          break;
+        case 'redo':
+          if (cad.redo()) { updatePropertyPanel(); addHistory('已重做', 'success'); }
+          break;
+        case 'copy':
+          {
+            const sel = cad.getEntityManager().getSelected();
+            if (sel.length > 0) {
+              window._cadClipboard = sel.map(e => e.clone());
+              addHistory(`已复制 ${sel.length} 个图元`, 'success');
+            }
+          }
+          break;
+        case 'paste':
+          if (window._cadClipboard && window._cadClipboard.length > 0) {
+            const em = cad.getEntityManager();
+            for (const entity of window._cadClipboard) {
+              em.add(entity.clone());
+            }
+            em.clearSelection();
+            addHistory(`已粘贴 ${window._cadClipboard.length} 个图元`, 'success');
+          }
+          break;
+        case 'erase':
+          {
+            const count = cad.eraseSelected();
+            if (count > 0) { updatePropertyPanel(); addHistory(`已删除 ${count} 个图元`, 'success'); }
+          }
+          break;
+
+        // 视图
+        case 'toggle-command':
+          toggleCommandLine();
+          break;
+        case 'toggle-properties':
+          propertiesPanel.classList.toggle('hidden');
+          break;
+        case 'toggle-grid':
+          gridEnabled = !gridEnabled;
+          cad.setShowGrid(gridEnabled);
+          addHistory(`网格: ${gridEnabled ? '开' : '关'}`, 'success');
+          break;
+        case 'zoom-extents':
+          cad.zoomExtents();
+          addHistory('已缩放全部', 'success');
+          break;
+        case 'reset-view':
+          cad.resetView();
+          addHistory('已重置视图', 'success');
+          break;
+
+        // 绘图/修改工具
+        case 'tool-line': toolManager.setActiveTool('line'); break;
+        case 'tool-circle': toolManager.setActiveTool('circle'); break;
+        case 'tool-arc': toolManager.setActiveTool('arc'); break;
+        case 'tool-move': toolManager.setActiveTool('move'); break;
+        case 'tool-copy': toolManager.setActiveTool('copy'); break;
+        case 'tool-fillet': toolManager.setActiveTool('fillet'); break;
+        case 'tool-chamfer': toolManager.setActiveTool('chamfer'); break;
+        case 'tool-extend': toolManager.setActiveTool('extend'); break;
+
+        // 帮助
+        case 'about':
+          alert('Howdz CAD\n纯前端在线CAD插件\n基于Canvas 2D渲染');
+          break;
+      }
+    }
+
+    // ========== 命令行折叠 ==========
+    let commandLineCollapsed = false;
+    const commandLineBody = document.getElementById('command-line-body');
+    const commandToggleBtn = document.getElementById('command-toggle-btn');
+    const commandLineHeader = document.getElementById('command-line-header');
+
+    function toggleCommandLine() {
+      commandLineCollapsed = !commandLineCollapsed;
+      if (commandLineCollapsed) {
+        commandLineBody.classList.add('collapsed');
+        commandToggleBtn.textContent = '▶';
+      } else {
+        commandLineBody.classList.remove('collapsed');
+        commandToggleBtn.textContent = '▼';
+      }
+    }
+
+    commandLineHeader.addEventListener('click', (e) => {
+      // 避免点击按钮时重复触发
+      if (e.target === commandToggleBtn) return;
+      toggleCommandLine();
+    });
+
+    commandToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleCommandLine();
+    });
+
+    // ========== 状态栏更新 ==========
+    const statusCoords = document.getElementById('status-coords');
+    const statusLayer = document.getElementById('status-layer');
+    const statusOrtho = document.getElementById('status-ortho');
+    const statusSnap = document.getElementById('status-snap');
+    const statusZoom = document.getElementById('status-zoom');
+
+    function updateStatusBar() {
+      const viewport = cad.getViewport();
+      const lm = cad.getLayerManager();
+      const tm = cad.getToolManager();
+
+      const { mouseWorld, scale } = viewport;
+      statusCoords.textContent = `X: ${mouseWorld.x.toFixed(2)}   Y: ${mouseWorld.y.toFixed(2)}`;
+      statusLayer.textContent = `图层: ${lm.getCurrentLayer()}`;
+      statusOrtho.textContent = `正交: ${tm.orthoMode ? '开' : '关'}`;
+      statusOrtho.className = tm.orthoMode ? 'status-item status-active' : 'status-item';
+      statusSnap.textContent = `捕捉: ${tm.snapMode ? '开' : '关'}`;
+      statusSnap.className = tm.snapMode ? 'status-item status-active' : 'status-item';
+      statusZoom.textContent = `缩放: ${(scale * 100).toFixed(0)}%`;
+    }
+
+    // 定期更新状态栏
+    setInterval(updateStatusBar, 100);
+    updateStatusBar();
+
+    // F2 切换命令行
+    document.addEventListener('keydown', (e) => {
+      if (document.activeElement === commandInput) return;
+      if (e.key === 'F2') {
+        e.preventDefault();
+        toggleCommandLine();
+        // 展开时聚焦命令输入框
+        if (!commandLineCollapsed) {
+          commandInput.focus();
+        }
+      }
+    });
 
     console.log('HowdzCAD 初始化完成');
     console.log('操作说明:');
