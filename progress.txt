@@ -16,6 +16,9 @@
 - DXF export: `DXFWriter.export(entities, layers?)` → DXF string; `HowdzCAD.saveDXF()` exports current entities; demo triggers download via Blob+URL.createObjectURL
 - File I/O (open/save) lives in demo layer via hidden `<input type="file">` (open) and Blob+`<a>` click (save) — core library has no DOM file API
 - Layer system: `LayerManager` manages layers (CRUD, visibility, lock, current layer); EntityManager/Renderer check layer state via `isEntityInteractive()`/`isLayerVisible()`; entity color falls back to layer color when null; new entities auto-assigned to current layer in `setupTools()` callback
+- CAD internal status bar is inside #cad-container; demo hides it with CSS `#cad-container > div { display: none; }` and adds layout-level status bar
+- Menu dropdowns use `.open` class toggle on `.menu-item`; mouseover auto-switches between open menus; click-outside closes all
+- Command line collapsible uses `.collapsed` class on `.command-line-body`; F2 key toggles and auto-focuses input when expanding
 
 ---
 
@@ -282,4 +285,22 @@
   - Layer panel uses event delegation for click/dblclick handlers on dynamically rendered layer items
   - Color picker is a simple popup with 8 ACI colors, positioned relative to the color swatch element
   - Layer rename updates entity.layer on all entities belonging to that layer
+---
+
+## 2026-07-07 - US-018
+- Implemented classic AutoCAD-style UI layout with menu dropdowns, collapsible command line, and status bar
+- Files changed: `demo/index.html`, `tasks/prd.json`
+- Menu bar: 6 menu items (文件/编辑/视图/绘图/修改/帮助) with functional dropdown menus containing keyboard shortcuts
+- Collapsible command line: header bar with toggle button (▼/▶), F2 keyboard shortcut to toggle
+- Status bar: bottom bar showing mouse coordinates, current layer, ortho/snap mode, zoom level (updates every 100ms)
+- View menu: toggle command line, toggle properties panel, grid toggle, zoom extents, reset view
+- Edit menu: undo, redo, copy, paste, delete with keyboard shortcuts
+- Draw/Modify menus: tool activation with keyboard shortcut labels
+- Hidden CAD's internal status bar (inside canvas container) in favor of layout-level status bar
+- **Learnings for future iterations:**
+  - CAD.ts creates an internal status bar inside #cad-container; demo hides it with `#cad-container > div { display: none; }` and adds its own status bar in the layout
+  - Menu dropdowns use CSS `display: none/block` toggle with `.open` class; mouseover auto-switches between open menus
+  - Command line collapsible uses `.collapsed` class on body div; toggle button and header click both work
+  - Status bar polls CAD state via setInterval(100ms) rather than hooking into viewport.onUpdate, to also capture layer/ortho/snap changes
+  - F2 key toggles command line and auto-focuses input when expanding
 ---
