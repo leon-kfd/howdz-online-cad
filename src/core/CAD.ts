@@ -87,6 +87,9 @@ export class HowdzCAD {
     this.toolManager = new ToolManager();
     this.setupTools();
 
+    // 共享网格间距配置（捕捉吸附与渲染网格保持一致）
+    this.toolManager.getGridSpacing = (scale) => this.renderer.getGridSpacing(scale);
+
     // 视口变化时更新状态栏
     this.viewport.onUpdate = () => this.updateStatusBar();
 
@@ -624,6 +627,41 @@ export class HowdzCAD {
    */
   public setShowAxes(show: boolean): void {
     this.renderer.setShowAxes(show);
+  }
+
+  /**
+   * 设置固定网格间距并切换到 fixed 模式
+   */
+  public setGridSize(size: number): void {
+    this.renderer.setGridSize(size);
+  }
+
+  /**
+   * 设置网格大小模式
+   */
+  public setGridSizeMode(mode: 'auto' | 'fixed'): void {
+    this.renderer.setGridSizeMode(mode);
+  }
+
+  /**
+   * 获取当前网格间距（世界坐标）
+   */
+  public getGridSpacing(): number {
+    return this.renderer.getGridSpacing(this.viewport.scale);
+  }
+
+  /**
+   * 获取网格大小模式
+   */
+  public getGridSizeMode(): 'auto' | 'fixed' {
+    return this.renderer.getGridSizeMode();
+  }
+
+  /**
+   * 获取固定网格间距
+   */
+  public getGridSize(): number {
+    return this.renderer.getGridSize();
   }
 
   /**

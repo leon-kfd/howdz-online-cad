@@ -1,5 +1,6 @@
 import { Tool, ToolContext } from './Tool';
 import { Point } from '../types';
+import { calculateGridSpacing } from '../../utils/math';
 
 /**
  * 工具管理器
@@ -11,11 +12,14 @@ export class ToolManager {
 
   /** 正交模式 */
   public orthoMode = false;
-  /** 捕捉模式（预留） */
+  /** 捕捉模式 */
   public snapMode = false;
 
   /** 工具切换回调 */
   public onToolChange: ((toolName: string) => void) | null = null;
+
+  /** 获取当前网格间距的回调（由 CAD 注入，与渲染器共享网格配置） */
+  public getGridSpacing: ((scale: number) => number) | null = null;
 
   /**
    * 注册工具
@@ -126,8 +130,18 @@ export class ToolManager {
   }
 
   private createContext(mouseWorld: Point, mouseScreen: Point, scale: number): ToolContext {
+    // 捕捉模式：将鼠标坐标吸附到最近的网格点
+    let snappedWorld = mouseWorld;
+    if (this.snapMode) {
+      const gridSpacing = this.getGridSpacing?.(scale) ?? calculateGridSpacing(scale);
+      snappedWorld = {
+        x: Math.round(mouseWorld.x / gridSpacing) * gridSpacing,
+        y: Math.round(mouseWorld.y / gridSpacing) * gridSpacing,
+      };
+    }
+
     return {
-      mouseWorld,
+      mouseWorld: snappedWorld,
       mouseScreen,
       orthoMode: this.orthoMode,
       snapMode: this.snapMode,

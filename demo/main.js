@@ -979,7 +979,9 @@ const statusCoords = document.getElementById('status-coords');
 const statusLayer = document.getElementById('status-layer');
 const statusOrtho = document.getElementById('status-ortho');
 const statusSnap = document.getElementById('status-snap');
+const statusGrid = document.getElementById('status-grid');
 const statusZoom = document.getElementById('status-zoom');
+const gridPopup = document.getElementById('grid-popup');
 
 function updateStatusBar() {
   const viewport = cad.getViewport();
@@ -989,12 +991,69 @@ function updateStatusBar() {
   const { mouseWorld, scale } = viewport;
   statusCoords.textContent = `X: ${mouseWorld.x.toFixed(2)}   Y: ${mouseWorld.y.toFixed(2)}`;
   statusLayer.textContent = `图层: ${lm.getCurrentLayer()}`;
-  statusOrtho.textContent = `正交: ${tm.orthoMode ? '开' : '关'}`;
-  statusOrtho.className = tm.orthoMode ? 'status-item status-active' : 'status-item';
-  statusSnap.textContent = `捕捉: ${tm.snapMode ? '开' : '关'}`;
-  statusSnap.className = tm.snapMode ? 'status-item status-active' : 'status-item';
+  statusOrtho.innerHTML = `正交: ${tm.orthoMode ? '开' : '关'} <span class="status-key">F8</span>`;
+  statusOrtho.className = tm.orthoMode ? 'status-item status-clickable status-active' : 'status-item status-clickable';
+  statusSnap.innerHTML = `捕捉: ${tm.snapMode ? '开' : '关'} <span class="status-key">F3</span>`;
+  statusSnap.className = tm.snapMode ? 'status-item status-clickable status-active' : 'status-item status-clickable';
   statusZoom.textContent = `缩放: ${(scale * 100).toFixed(0)}%`;
+
+  // 更新网格大小显示
+  const gridMode = cad.getGridSizeMode();
+  const gridLabel = gridMode === 'auto' ? '自动' : cad.getGridSize().toString();
+  statusGrid.textContent = `网格: ${gridLabel}`;
+  gridPopup.querySelectorAll('.grid-popup-item').forEach(item => {
+    if (gridMode === 'auto') {
+      item.classList.toggle('active', item.dataset.mode === 'auto');
+    } else {
+      item.classList.toggle('active', item.dataset.size === String(cad.getGridSize()));
+    }
+  });
 }
+
+// 状态栏点击切换正交/捕捉
+statusOrtho.addEventListener('click', () => {
+  const ortho = toolManager.toggleOrtho();
+  addHistory(`正交模式: ${ortho ? '开' : '关'}`, 'success');
+  updateStatusBar();
+});
+statusSnap.addEventListener('click', () => {
+  const snap = toolManager.toggleSnap();
+  addHistory(`捕捉模式: ${snap ? '开' : '关'}`, 'success');
+  updateStatusBar();
+});
+
+// 网格大小弹出菜单
+statusGrid.addEventListener('click', (e) => {
+  e.stopPropagation();
+  gridPopup.classList.toggle('visible');
+  // 定位到状态栏项上方
+  const rect = statusGrid.getBoundingClientRect();
+  gridPopup.style.left = rect.left + 'px';
+});
+
+gridPopup.addEventListener('click', (e) => {
+  const item = e.target.closest('.grid-popup-item');
+  if (!item) return;
+
+  if (item.dataset.mode === 'auto') {
+    cad.setGridSizeMode('auto');
+    addHistory('网格: 自动', 'success');
+  } else if (item.dataset.size) {
+    const size = parseInt(item.dataset.size, 10);
+    cad.setGridSize(size);
+    addHistory(`网格: ${size}`, 'success');
+  }
+
+  gridPopup.classList.remove('visible');
+  updateStatusBar();
+});
+
+// 点击外部关闭网格弹出菜单
+document.addEventListener('click', (e) => {
+  if (!gridPopup.contains(e.target) && e.target !== statusGrid) {
+    gridPopup.classList.remove('visible');
+  }
+});
 
 // 定期更新状态栏
 setInterval(updateStatusBar, 100);

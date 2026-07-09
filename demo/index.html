@@ -496,10 +496,70 @@
     .status-bar .status-active {
       color: #0078d4;
     }
+    .status-bar .status-active .status-key {
+      color: rgba(0, 120, 212, 0.7);
+    }
+    .status-bar .status-clickable {
+      cursor: pointer;
+      padding: 0 4px;
+      border-radius: 2px;
+    }
+    .status-bar .status-clickable:hover {
+      background: rgba(255,255,255,0.08);
+    }
+    .status-bar .status-key {
+      color: #666;
+      font-size: 10px;
+      margin-left: 2px;
+    }
     .status-bar .status-sep {
       width: 1px;
       height: 14px;
       background: #3a3a3a;
+    }
+
+    /* 网格大小弹出菜单 */
+    .grid-popup {
+      position: absolute;
+      bottom: 28px;
+      background: #2d2d2d;
+      border: 1px solid #3a3a3a;
+      border-radius: 4px;
+      padding: 4px 0;
+      min-width: 100px;
+      z-index: 1000;
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.5);
+      display: none;
+    }
+    .grid-popup.visible {
+      display: block;
+    }
+    .grid-popup-item {
+      padding: 5px 16px;
+      color: #ccc;
+      font-size: 12px;
+      font-family: 'Consolas', monospace;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      white-space: nowrap;
+    }
+    .grid-popup-item:hover {
+      background: #3a3a3a;
+      color: #fff;
+    }
+    .grid-popup-item.active {
+      color: #0078d4;
+    }
+    .grid-popup-item.active::after {
+      content: '✓';
+      margin-left: 12px;
+    }
+    .grid-popup-divider {
+      height: 1px;
+      background: #3a3a3a;
+      margin: 4px 0;
     }
   </style>
 </head>
@@ -657,11 +717,25 @@
       <span class="status-sep"></span>
       <span class="status-item" id="status-layer">图层: 0</span>
       <span class="status-sep"></span>
-      <span class="status-item" id="status-ortho">正交: 关</span>
+      <span class="status-item status-clickable" id="status-ortho" title="切换正交模式">正交: 关 <span class="status-key">F8</span></span>
       <span class="status-sep"></span>
-      <span class="status-item" id="status-snap">捕捉: 关</span>
+      <span class="status-item status-clickable" id="status-snap" title="切换捕捉模式">捕捉: 关 <span class="status-key">F3</span></span>
+      <span class="status-sep"></span>
+      <span class="status-item status-clickable" id="status-grid" title="点击切换网格大小">网格: 自动</span>
       <span class="status-sep"></span>
       <span class="status-item" id="status-zoom">缩放: 100%</span>
+      <!-- 网格大小弹出菜单 -->
+      <div class="grid-popup" id="grid-popup">
+        <div class="grid-popup-item active" data-mode="auto">自动</div>
+        <div class="grid-popup-divider"></div>
+        <div class="grid-popup-item" data-size="1">1</div>
+        <div class="grid-popup-item" data-size="2">2</div>
+        <div class="grid-popup-item" data-size="5">5</div>
+        <div class="grid-popup-item" data-size="10">10</div>
+        <div class="grid-popup-item" data-size="20">20</div>
+        <div class="grid-popup-item" data-size="50">50</div>
+        <div class="grid-popup-item" data-size="100">100</div>
+      </div>
     </div>
   </div>
 

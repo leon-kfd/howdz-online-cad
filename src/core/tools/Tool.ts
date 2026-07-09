@@ -8,7 +8,7 @@ export interface ToolContext {
   mouseScreen: Point;
   /** 正交模式是否开启 */
   orthoMode: boolean;
-  /** 捕捉模式是否开启（预留） */
+  /** 捕捉模式是否开启 */
   snapMode: boolean;
   /** 当前缩放比例（用于计算容差） */
   scale: number;

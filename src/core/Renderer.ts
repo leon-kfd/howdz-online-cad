@@ -29,6 +29,11 @@ export class Renderer {
   private showGrid: boolean;
   private showAxes: boolean;
 
+  /** 网格大小模式：'auto' 自适应缩放，'fixed' 固定间距 */
+  private gridSizeMode: 'auto' | 'fixed' = 'auto';
+  /** 固定网格间距（仅 fixed 模式生效） */
+  private gridSize = 10;
+
   /** 叠加层渲染回调（用于工具的临时图形） */
   private overlayRenderer: ((ctx: CanvasRenderingContext2D) => void) | null = null;
 
@@ -203,7 +208,7 @@ export class Renderer {
     const ctx = this.ctx;
 
     // 计算网格间距
-    const gridSpacing = calculateGridSpacing(scale);
+    const gridSpacing = this.getGridSpacing(scale);
     const majorGridSpacing = gridSpacing * 5;
 
     // 计算可见区域的世界坐标范围
@@ -339,6 +344,46 @@ export class Renderer {
     ctx.beginPath();
     ctx.arc(mouseScreen.x, mouseScreen.y, 2, 0, Math.PI * 2);
     ctx.fill();
+  }
+
+  /**
+   * 获取当前网格间距（世界坐标）
+   * auto 模式根据缩放自适应，fixed 模式返回固定值
+   */
+  public getGridSpacing(scale: number): number {
+    if (this.gridSizeMode === 'fixed') {
+      return this.gridSize;
+    }
+    return calculateGridSpacing(scale);
+  }
+
+  /**
+   * 获取网格大小模式
+   */
+  public getGridSizeMode(): 'auto' | 'fixed' {
+    return this.gridSizeMode;
+  }
+
+  /**
+   * 获取固定网格间距
+   */
+  public getGridSize(): number {
+    return this.gridSize;
+  }
+
+  /**
+   * 设置网格大小模式
+   */
+  public setGridSizeMode(mode: 'auto' | 'fixed'): void {
+    this.gridSizeMode = mode;
+  }
+
+  /**
+   * 设置固定网格间距并切换到 fixed 模式
+   */
+  public setGridSize(size: number): void {
+    this.gridSize = size;
+    this.gridSizeMode = 'fixed';
   }
 
   /**
